@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel2PDF</title>
+    <style>
+        /* Modern CSS Design Tokens */
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --bg-hover: #f1f5f9;
+            --bg-accent-subtle: #eff6ff;
+
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-subtle: #94a3b8;
+
+            --border-color: #e2e8f0;
+            --border-focus: #3b82f6;
+
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-text: #ffffff;
+
+            --secondary-bg: #f1f5f9;
+            --secondary-text: #334155;
+            --secondary-hover: #e2e8f0;
+
+            --danger-bg: #ef4444;
+            --danger-text: #ffffff;
+            --danger-hover: #dc2626;
+
+            --status-success-bg: #dcfce7;
+            --status-success-text: #166534;
+            --status-success-border: #bbf7d0;
+
+            --status-error-bg: #fef2f2;
+            --status-error-text: #991b1b;
+            --status-error-border: #fecaca;
+
+            --status-loading-bg: #e0f2fe;
+            --status-loading-text: #075985;
+            --status-loading-border: #bae6fd;
+
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        /* Dark Mode Palette Overrides */
+        [data-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #0f172a;
+            --bg-hover: #334155;
+            --bg-accent-subtle: #1e293b;
+
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-subtle: #64748b;
+
+            --border-color: #334155;
+            --border-focus: #60a5fa;
+
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --primary-light: #1e3a8a;
+            --primary-text: #ffffff;
+
+            --secondary-bg: #334155;
+            --secondary-text: #f1f5f9;
+            --secondary-hover: #475569;
+
+            --status-success-bg: #064e3b;
+            --status-success-text: #a7f3d0;
+            --status-success-border: #047857;
+
+            --status-error-bg: #7f1d1d;
+            --status-error-text: #fecaca;
+            --status-error-border: #991b1b;
+
+            --status-loading-bg: #0c4a6e;
+            --status-loading-text: #bae6fd;
+            --status-loading-border: #0369a1;
+
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        /* Header & Theme Toggle */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .theme-toggle-wrapper {
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+
+        .theme-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Card Layout */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        /* Form Inputs */
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        textarea {
+            min-height: 160px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .help-text {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        /* Buttons & Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        button {
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            opacity: 0.95;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .primary {
+            background: var(--primary);
+            color: var(--primary-text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .secondary {
+            background: var(--secondary-bg);
+            color: var(--secondary-text);
+        }
+
+        .secondary:hover:not(:disabled) {
+            background: var(--secondary-hover);
+        }
+
+        .danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+        }
+
+        .chapter-card {
+            display: none;
+        }
+
+        .chapter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .chapter-header h2 {
+            margin-bottom: 0;
+        }
+
+        #chapterCount {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-left: 6px;
+        }
+
+        .chapter-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .small-button {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        #chapterList {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .chapter {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            background: var(--bg-card);
+        }
+
+        .chapter:hover {
+            background: var(--bg-hover);
+        }
+
+        .chapter input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 3px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .chapter-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chapter-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            color: var(--text-main);
+        }
+
+        .chapter-url {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .selection-info {
+            margin-top: 18px;
+            padding: 12px 16px;
+            background: var(--bg-hover);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .selection-info strong {
+            color: var(--text-main);
+        }
+
+        .generate-section {
+            text-align: center;
+        }
+
+        .generate-button {
+            width: 100%;
+            max-width: 320px;
+            padding: 14px 24px;
+            font-size: 1.05rem;
+        }
+
+        /* Status Notifications */
+        #status {
+            display: none;
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        #status.success {
+            display: block;
+            background: var(--status-success-bg);
+            color: var(--status-success-text);
+            border: 1px solid var(--status-success-border);
+        }
+
+        #status.error {
+            display: block;
+            background: var(--status-error-bg);
+            color: var(--status-error-text);
+            border: 1px solid var(--status-error-border);
+        }
+
+        #status.loading {
+            display: block;
+            background: var(--status-loading-bg);
+            color: var(--status-loading-text);
+            border: 1px solid var(--status-loading-border);
+        }
+
+        .empty-message {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 32px 10px;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--text-subtle);
+            font-size: 0.85rem;
+            margin-top: 40px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                width: 92%;
+                margin: 20px auto;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .theme-toggle-wrapper {
+                position: relative;
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .chapter-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .chapter-controls {
+                width: 100%;
+            }
+
+            .chapter-controls button {
+                flex: 1;
+            }
+
+            .actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="theme-toggle-wrapper">
+            <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+        <h1>Novel2PDF</h1>
+        <p>Convert web novel chapters into a single PDF</p>
+    </div>
+
+    <!-- NOVEL INFORMATION -->
+    <div class="card">
+        <h2>Novel Information</h2>
+        <label for="novelTitle">Novel Title</label>
+        <input type="text" id="novelTitle" placeholder="Example: Myst, Might, Mayhem">
+    </div>
+
+    <!-- CHAPTER URL IMPORT -->
+    <div class="card">
+        <h2>Import Chapters</h2>
+        <label for="chapterUrls">Chapter URLs</label>
+        <p class="help-text">
+            Paste multiple chapter links below. You can paste one URL per line, or paste text containing chapter links. Duplicate URLs will automatically be removed and chapters will be sorted by chapter number.
+        </p>
+        <textarea id="chapterUrls" placeholder="Paste chapter URLs here...
+
+Example:
+https://roliascan.com/read/myst-might-mayhem-novel/ch1-204695/
+https://roliascan.com/read/myst-might-mayhem-novel/ch2-204696/
+https://roliascan.com/read/myst-might-mayhem-novel/ch3-204697/"></textarea>
+
+        <div class="actions">
+            <button class="primary" onclick="importChapters()">Import Chapters</button>
+            <button class="secondary" onclick="clearUrls()">Clear</button>
+        </div>
+    </div>
+
+    <!-- CHAPTER LIST -->
+    <div class="card chapter-card" id="chapterCard">
+        <div class="chapter-header">
+            <h2>
+                Chapters
+                <span id="chapterCount">(0)</span>
+            </h2>
+            <div class="chapter-controls">
+                <button class="secondary small-button" onclick="selectAll()">Select All</button>
+                <button class="secondary small-button" onclick="deselectAll()">Clear Selection</button>
+            </div>
+        </div>
+
+        <div id="chapterList">
+            <div class="empty-message">No chapters imported yet.</div>
+        </div>
+
+        <div class="selection-info">
+            Selected: <strong id="selectedCount">0</strong> / <strong id="totalCount">0</strong> chapters
+        </div>
+    </div>
+
+    <!-- GENERATE PDF -->
+    <div class="card generate-section">
+        <h2>Generate PDF</h2>
+        <p class="help-text">The selected chapters will be downloaded as one PDF file.</p>
+        <button id="generateButton" class="primary generate-button" onclick="generatePdf()">Generate PDF</button>
+        <div id="status"></div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Novel2PDF
+    </div>
+
+</div>
+
+<script>
+    /* ============================================
+     * DARK / LIGHT THEME TOGGLE LOGIC
+     * ============================================ */
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeUI(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            updateThemeUI('dark');
+        }
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeUI(newTheme);
+    }
+
+    function updateThemeUI(theme) {
+        const icon = document.getElementById('themeIcon');
+        const text = document.getElementById('themeText');
+        if (theme === 'dark') {
+            icon.textContent = '☀️';
+            text.textContent = 'Light Mode';
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark Mode';
+        }
+    }
+
+    initTheme();
+
+    /* ============================================
+     * GLOBAL DATA
+     * ============================================ */
+    let chapters = [];
+
+    /* ============================================
+     * IMPORT CHAPTERS
+     * ============================================ */
+    function importChapters() {
+        const textarea = document.getElementById( "chapterUrls" );
+        const text = textarea.value.trim();
+
+        if (!text) {
+            showStatus( "Please paste chapter URLs.", "error" );
+            return;
+        }
+
+        const urlRegex = /https?:\/\/[^\s"'<>]+/g;
+        let urls = text.match(urlRegex) || [];
+
+        urls = urls.map( url => {
+            return url
+                .replace( /[),.;]+$/, "" )
+                .trim();
+        } );
+
+        urls = urls.filter( url => {
+            return url.includes( "/read/" );
+        } );
+
+        urls = [...new Set(urls)];
+
+        if (urls.length === 0) {
+            showStatus( "No chapter URLs were found.", "error" );
+            return;
+        }
+
+        urls.sort( compareChapterUrls );
+
+        chapters = urls.map( (url, index) => {
+            return {
+                number: index + 1,
+                url: url,
+                title: "Chapter " + (index + 1),
+                selected: true
+            };
+        } );
+
+        renderChapters();
+
+        document.getElementById( "chapterCard" ).style.display = "block";
+
+        showStatus( urls.length + " chapter(s) imported successfully.", "success" );
+    }
+
+    /* ============================================
+     * EXTRACT CHAPTER NUMBER
+     * ============================================ */
+    function extractChapterNumber(url) {
+        const match = url.match( /ch(?:apter)?[-_]?(\d+)/i );
+        if (match) {
+            return parseInt( match[1], 10 );
+        }
+        return 999999;
+    }
+
+    /* ============================================
+     * SORT CHAPTER URLS
+     * ============================================ */
+    function compareChapterUrls(a, b) {
+        const chapterA = extractChapterNumber(a);
+        const chapterB = extractChapterNumber(b);
+        return chapterA - chapterB;
+    }
+
+    /* ============================================
+     * RENDER CHAPTERS
+     * ============================================ */
+    function renderChapters() {
+        const container = document.getElementById( "chapterList" );
+        const chapterCount = document.getElementById( "chapterCount" );
+
+        chapterCount.textContent = "(" + chapters.length + ")";
+        container.innerHTML = "";
+
+        if (chapters.length === 0) {
+            container.innerHTML = `
+            <div class="empty-message">
+                No chapters imported yet.
+            </div>
+        `;
+            updateSelectedCount();
+            return;
+        }
+
+        chapters.forEach( (chapter, index) => {
+            const div = document.createElement( "div" );
+            div.className = "chapter";
+
+            div.innerHTML = `
+            <input
+                type="checkbox"
+                ${chapter.selected ? "checked" : ""}
+                onchange="toggleChapter(${index})"
+            >
+            <div class="chapter-info">
+                <div class="chapter-title">
+                    ${escapeHtml( chapter.title )}
+                </div>
+                <div class="chapter-url">
+                    ${escapeHtml( chapter.url )}
+                </div>
+            </div>
+        `;
+
+            container.appendChild( div );
+        } );
+
+        updateSelectedCount();
+    }
+
+    /* ============================================
+     * TOGGLE CHAPTER
+     * ============================================ */
+    function toggleChapter(index) {
+        if (!chapters[index]) {
+            return;
+        }
+
+        chapters[index].selected = !chapters[index].selected;
+        updateSelectedCount();
+    }
+
+    /* ============================================
+     * SELECT ALL
+     * ============================================ */
+    function selectAll() {
+        chapters.forEach( chapter => {
+            chapter.selected = true;
+        } );
+
+        renderChapters();
+    }
+
+    /* ============================================
+     * DESELECT ALL
+     * ============================================ */
+    function deselectAll() {
+        chapters.forEach( chapter => {
+            chapter.selected = false;
+        } );
+
+        renderChapters();
+    }
+
+    /* ============================================
+     * UPDATE SELECTED COUNT
+     * ============================================ */
+    function updateSelectedCount() {
+        const selected = chapters.filter( chapter => chapter.selected ).length;
+
+        document.getElementById( "selectedCount" ).textContent = selected;
+        document.getElementById( "totalCount" ).textContent = chapters.length;
+    }
+
+    /* ============================================
+     * CLEAR URL INPUT
+     * ============================================ */
+    function clearUrls() {
+        document.getElementById( "chapterUrls" ).value = "";
+        chapters = [];
+        document.getElementById( "chapterCard" ).style.display = "none";
+        clearStatus();
+    }
+
+    /* ============================================
+     * GENERATE PDF
+     * ============================================ */
+    async function generatePdf() {
+        const selectedChapters = chapters.filter( chapter => chapter.selected );
+
+        if ( selectedChapters.length === 0 ) {
+            showStatus( "Please select at least one chapter.", "error" );
+            return;
+        }
+
+        const novelTitle = document.getElementById( "novelTitle" ).value.trim();
+
+        if (!novelTitle) {
+            showStatus( "Please enter the novel title.", "error" );
+            return;
+        }
+
+        const generateButton = document.getElementById( "generateButton" );
+        generateButton.disabled = true;
+        generateButton.textContent = "Generating PDF...";
+
+        showStatus( "Generating PDF from " + selectedChapters.length + " chapter(s). Please wait...", "loading" );
+
+        try {
+            const urls = selectedChapters.map( chapter => chapter.url );
+
+            const requestData = {
+                novelTitle: novelTitle,
+                chapterUrls: urls
+            };
+
+            const response = await fetch( "/api/novel/pdf/multiple", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify( requestData )
+            } );
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error( error || "Server returned HTTP " + response.status );
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL( blob );
+
+            const link = document.createElement( "a" );
+            link.href = downloadUrl;
+            link.download = createFileName( novelTitle );
+
+            document.body.appendChild( link );
+            link.click();
+            link.remove();
+
+            window.URL.revokeObjectURL( downloadUrl );
+
+            showStatus( "PDF generated successfully! " + selectedChapters.length + " chapter(s) were included.", "success" );
+
+        } catch (error) {
+            console.error( "PDF generation error:", error );
+            showStatus( "PDF generation failed: " + error.message, "error" );
+
+        } finally {
+            generateButton.disabled = false;
+            generateButton.textContent = "Generate PDF";
+        }
+    }
+
+    /* ============================================
+     * CREATE FILE NAME
+     * ============================================ */
+    function createFileName(title) {
+        return title
+            .trim()
+            .replace( /[^a-z0-9]/gi, "_" )
+            .replace( /_+/g, "_" )
+            .replace( /^_|_$/g, "" ) + ".pdf";
+    }
+
+    /* ============================================
+     * STATUS MESSAGE
+     * ============================================ */
+    function showStatus( message, type ) {
+        const status = document.getElementById( "status" );
+        status.textContent = message;
+        status.className = type;
+    }
+
+    /* ============================================
+     * CLEAR STATUS
+     * ============================================ */
+    function clearStatus() {
+        const status = document.getElementById( "status" );
+        status.textContent = "";
+        status.className = "";
+    }
+
+    /* ============================================
+     * HTML ESCAPE
+     * ============================================ */
+    function escapeHtml(value) {
+        const div = document.createElement( "div" );
+        div.textContent = value;
+        return div.innerHTML;
+    }
+</script>
+
+</body>
+</html>

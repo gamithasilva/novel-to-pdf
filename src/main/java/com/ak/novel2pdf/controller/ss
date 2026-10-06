@@ -1,0 +1,3220 @@
+
+// Simple MD5 implementation for client-side (GLOBAL SCOPE)
+function md5(string) {
+    function rotateLeft(value, shift) {
+        return (value << shift) | (value >>> (32 - shift));
+    }
+    function addUnsigned(x, y) {
+        const lsw = (x & 0xFFFF) + (y & 0xFFFF);
+        const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+        return (msw << 16) | (lsw & 0xFFFF);
+    }
+    function md5F(x, y, z) { return (x & y) | ((~x) & z); }
+    function md5G(x, y, z) { return (x & z) | (y & (~z)); }
+    function md5H(x, y, z) { return x ^ y ^ z; }
+    function md5I(x, y, z) { return y ^ (x | (~z)); }
+    function md5FF(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(md5F(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function md5GG(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(md5G(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function md5HH(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(md5H(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function md5II(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(md5I(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function convertToWordArray(string) {
+        let lWordCount, lMessageLength = string.length, lNumberOfWords_temp1 = lMessageLength + 8,
+            lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64,
+            lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16, lWordArray = Array(lNumberOfWords - 1),
+            lBytePosition = 0, lByteCount = 0;
+        while (lByteCount < lMessageLength) {
+            lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+            lBytePosition = (lByteCount % 4) * 8;
+            lWordArray[lWordCount] = (lWordArray[lWordCount] | (string.charCodeAt(lByteCount) << lBytePosition));
+            lByteCount++;
+        }
+        lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+        lBytePosition = (lByteCount % 4) * 8;
+        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
+        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
+        return lWordArray;
+    }
+    function wordToHex(value) {
+        let wordToHexValue = "", wordToHexValue_temp = "", lByte, lCount;
+        for (lCount = 0; lCount <= 3; lCount++) {
+            lByte = (value >>> (lCount * 8)) & 255;
+            wordToHexValue_temp = "0" + lByte.toString(16);
+            wordToHexValue = wordToHexValue + wordToHexValue_temp.substr(wordToHexValue_temp.length - 2, 2);
+        }
+        return wordToHexValue;
+    }
+    let x = [], k, AA, BB, CC, DD, a, b, c, d;
+    const S11 = 7, S12 = 12, S13 = 17, S14 = 22, S21 = 5, S22 = 9, S23 = 14, S24 = 20,
+        S31 = 4, S32 = 11, S33 = 16, S34 = 23, S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+    x = convertToWordArray(string);
+    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+    for (k = 0; k < x.length; k += 16) {
+        AA = a; BB = b; CC = c; DD = d;
+        a = md5FF(a, b, c, d, x[k], S11, 0xD76AA478);
+        d = md5FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
+        c = md5FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
+        b = md5FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+        a = md5FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
+        d = md5FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
+        c = md5FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
+        b = md5FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+        a = md5FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
+        d = md5FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
+        c = md5FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
+        b = md5FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+        a = md5FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
+        d = md5FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
+        c = md5FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
+        b = md5FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+        a = md5GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
+        d = md5GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
+        c = md5GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
+        b = md5GG(b, c, d, a, x[k], S24, 0xE9B6C7AA);
+        a = md5GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
+        d = md5GG(d, a, b, c, x[k + 10], S22, 0x2441453);
+        c = md5GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
+        b = md5GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+        a = md5GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
+        d = md5GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
+        c = md5GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
+        b = md5GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+        a = md5GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
+        d = md5GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
+        c = md5GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
+        b = md5GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+        a = md5HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
+        d = md5HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
+        c = md5HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
+        b = md5HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+        a = md5HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
+        d = md5HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
+        c = md5HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
+        b = md5HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+        a = md5HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
+        d = md5HH(d, a, b, c, x[k], S32, 0xEAA127FA);
+        c = md5HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
+        b = md5HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+        a = md5HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
+        d = md5HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
+        c = md5HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
+        b = md5HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+        a = md5II(a, b, c, d, x[k], S41, 0xF4292244);
+        d = md5II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
+        c = md5II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
+        b = md5II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+        a = md5II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
+        d = md5II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
+        c = md5II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
+        b = md5II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+        a = md5II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
+        d = md5II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
+        c = md5II(c, d, a, b, x[k + 6], S43, 0xA3014314);
+        b = md5II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+        a = md5II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
+        d = md5II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
+        c = md5II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
+        b = md5II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+        a = addUnsigned(a, AA); b = addUnsigned(b, BB); c = addUnsigned(c, CC); d = addUnsigned(d, DD);
+    }
+    return (wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d)).toLowerCase();
+}
+
+// Anti-scraping token generator (GLOBAL SCOPE)
+function generateToken() {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const hour = new Date().toISOString().slice(0, 13).replace(/[-T:]/g, ''); // YYYYMMDDhh
+    const secret = 'mng_ch_' + hour;
+    const hash = md5(timestamp + secret).substring(0, 16);
+    return { token: hash, timestamp: timestamp };
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const chapterOrder = document.querySelector('.chapter-order');
+    const chapterList = document.querySelector('.chapter-list');
+    const addToLibraryBtn = document.querySelector('.add-to-library-btn');
+    const descriptionContainer = document.getElementById('description-container');
+    const descriptionContent = document.getElementById('description-content-tab');
+    const descriptionFade = document.getElementById('description-fade');
+    const toggleDescriptionBtn = document.getElementById('toggle-description');
+
+    // New tab elements
+    const tabs = document.querySelectorAll('.tabs-item');
+    const tabContents = document.querySelectorAll('.tab-content-panel');
+
+    let isAscending = true;
+    let isDescriptionExpanded = false;
+
+    // Check if user is authenticated (only once)
+    let isAuthenticated = false;
+    let currentUser = null;
+
+    // Chapter loading system - DEFINE EARLY TO AVOID SCOPE ISSUES
+    let chaptersLoaded = false;
+    let currentOffset = 0;
+    let currentOrder = 'DESC';
+    let currentSearch = '';
+    let currentGroupId = null;
+    let hasMoreChapters = true;
+    let isLoadingChapters = false;
+
+    function loadChaptersIfNeeded() {
+        if (!chaptersLoaded) {
+            loadChapters(true);
+        }
+    }
+
+    async function loadChapters(isInitial = false) {
+        if (isLoadingChapters) return;
+        if (!isInitial && !hasMoreChapters) return;
+
+        isLoadingChapters = true;
+
+        const chapterListContainer = document.querySelector('.chapter-list');
+        if (!chapterListContainer) return;
+
+        const mangaId = chapterListContainer.dataset.mangaId;
+        const mangaStatus = chapterListContainer.dataset.status;
+        if (!mangaId) return;
+
+        // Show loader on initial load
+        if (isInitial) {
+            chapterListContainer.innerHTML = `
+                <div class="chapter-loader flex items-center justify-center p-12">
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-400"></div>
+                        <span class="text-sm text-neutral-400">Loading chapters...</span>
+                    </div>
+                </div>
+            `;
+            currentOffset = 0;
+        }
+
+        try {
+            // Generate anti-scraping token
+            const { token, timestamp } = generateToken();
+
+            const params = new URLSearchParams({
+                manga_id: mangaId,
+                offset: currentOffset,
+                limit: 500,
+                order: currentOrder,
+                _t: token,
+                _ts: timestamp
+            });
+
+            if (currentSearch) params.append('search', currentSearch);
+            if (currentGroupId) params.append('group_id', currentGroupId);
+
+            const response = await fetch(`/auth/manga-chapters?${params}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Failed to load chapters');
+
+            const data = await response.json();
+
+            if (data.success) {
+                renderChapters(data.chapters, isInitial, mangaStatus);
+                hasMoreChapters = data.has_more;
+                currentOffset += data.chapters.length;
+                chaptersLoaded = true;
+
+                // Mark read chapters after rendering
+                if (isAuthenticated) {
+                    setTimeout(() => markReadChapters(), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading chapters:', error);
+            chapterListContainer.innerHTML = `
+                <div class="p-8 text-center text-neutral-400">
+                    <p>Failed to load chapters. Please try again.</p>
+                </div>
+            `;
+        } finally {
+            isLoadingChapters = false;
+        }
+    }
+
+    function renderChapters(chapters, clearFirst, mangaStatus) {
+        const chapterListContainer = document.querySelector('.chapter-list');
+        if (!chapterListContainer) return;
+
+        if (clearFirst) {
+            chapterListContainer.innerHTML = '';
+        }
+
+        if (chapters.length === 0 && clearFirst) {
+            chapterListContainer.innerHTML = '<p class="py-8 text-center text-neutral-500 text-sm">No chapters found.</p>';
+            return;
+        }
+
+        const highestChapter = chapters[0]?.chapter || null;
+        const existingCount = chapterListContainer.querySelectorAll('a').length;
+
+        chapters.forEach((chapter, idx) => {
+            const isLastChapter = mangaStatus === 'Completed' && chapter.chapter === highestChapter;
+            const globalIndex = existingCount + idx; // For alternating rows
+            const chapterHTML = createChapterHTML(chapter, isLastChapter, globalIndex);
+            chapterListContainer.insertAdjacentHTML('beforeend', chapterHTML);
+        });
+    }
+
+    function createChapterHTML(chapter, isLastChapter, index) {
+        const groupName = chapter.group_name || '';
+        const title = chapter.title || '';
+        const likes = parseInt(chapter.likes) || 0;
+        const language = chapter.language || 'en';
+
+        // Alternating row background
+        const rowBg = index % 2 === 0 ? 'bg-neutral-800/30' : '';
+
+        // Language flag SVGs
+        const languageFlags = {
+            'it': '<svg class="w-4 h-3" viewBox="0 0 24 16" fill="none"><defs><clipPath id="round-it"><rect width="24" height="16" rx="3"/></clipPath></defs><g clip-path="url(#round-it)"><rect width="8" height="16" fill="#2D4A2D"/><rect x="8" width="8" height="16" fill="#4A4A4A"/><rect x="16" width="8" height="16" fill="#4A2D2D"/></g></svg>',
+            'fr': '<svg class="w-4 h-3" viewBox="0 0 24 16" fill="none"><defs><clipPath id="round-fr"><rect width="24" height="16" rx="3"/></clipPath></defs><g clip-path="url(#round-fr)"><rect width="8" height="16" fill="#2D3A4A"/><rect x="8" width="8" height="16" fill="#4A4A4A"/><rect x="16" width="8" height="16" fill="#4A2D32"/></g></svg>',
+            'ru': '<svg class="w-4 h-3" viewBox="0 0 24 16" fill="none"><defs><clipPath id="round-ru"><rect width="24" height="16" rx="3"/></clipPath></defs><g clip-path="url(#round-ru)"><rect width="24" height="5.33" fill="#4A4A4A"/><rect y="5.33" width="24" height="5.34" fill="#2D3A4A"/><rect y="10.67" width="24" height="5.33" fill="#4A2D2D"/></g></svg>',
+            'pt-br': '<svg class="w-4 h-3" viewBox="0 0 24 16" fill="none"><defs><clipPath id="round-br"><rect width="24" height="16" rx="3"/></clipPath></defs><g clip-path="url(#round-br)"><rect width="24" height="16" fill="#2D4A32"/><polygon points="12,3 21,8 12,13 3,8" fill="#4A4A32"/><circle cx="12" cy="8" r="2.5" fill="#2D2D4A"/></g></svg>',
+            'es': '<svg class="w-4 h-3" viewBox="0 0 24 16" fill="none"><defs><clipPath id="round-es"><rect width="24" height="16" rx="3"/></clipPath></defs><g clip-path="url(#round-es)"><rect width="24" height="4" fill="#4A2D2D"/><rect y="4" width="24" height="8" fill="#4A4A32"/><rect y="12" width="24" height="4" fill="#4A2D2D"/></g></svg>'
+        };
+        const languageFlag = languageFlags[language] || '';
+
+        return `
+        <a href="${chapter.url}"
+            class="group flex items-center px-3 py-2.5 hover:bg-neutral-700/40 transition-colors ${rowBg}"
+            data-chapter-id="${chapter.id}"
+            data-group-id="${chapter.group_id || ''}"
+            data-group-name="${groupName}">
+
+            <!-- Mobile Layout -->
+            <div class="sm:hidden w-full">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <!-- Three-dot menu -->
+                        <div class="relative chapter-menu-container flex-shrink-0">
+                            <button class="chapter-menu-btn p-1 hover:bg-neutral-700 rounded transition-colors"
+                                    data-chapter-id="${chapter.id}"
+                                    onclick="event.preventDefault(); event.stopPropagation(); toggleChapterMenu(this);">
+                                <svg class="w-4 h-4 text-neutral-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                </svg>
+                            </button>
+                            <div class="chapter-menu-dropdown hidden absolute left-0 top-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md shadow-xl z-50 min-w-[140px]">
+                                <button class="mark-as-read-btn w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-700 transition-colors rounded-md flex items-center gap-2"
+                                        onclick="event.preventDefault(); event.stopPropagation(); markChapterAsReadFromMenu(${chapter.id}, this);">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <span>Mark as read</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 chapter-info">
+                                <span class="font-medium text-sm text-neutral-200 group-hover:text-orange-400 transition-colors">
+                                    Ch. ${chapter.chapter}
+                                </span>
+                                ${isLastChapter ? '<span class="text-[10px] bg-neutral-700 text-neutral-400 px-1.5 py-0.5 rounded">END</span>' : ''}
+                                ${language !== 'en' ? `<span class="flex-shrink-0">${languageFlag}</span>` : ''}
+                            </div>
+                            ${title ? `<p class="text-xs text-neutral-500 truncate mt-0.5">${title}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0 ml-2">
+                        <span class="text-xs text-neutral-500">${likes}</span>
+                        <span class="text-xs text-neutral-500">${chapter.date}</span>
+                    </div>
+                </div>
+                ${groupName ? `<div class="text-[10px] text-neutral-600 mt-1 ml-7">${groupName}</div>` : ''}
+            </div>
+
+            <!-- Desktop Layout -->
+            <div class="hidden sm:flex items-center w-full">
+                <div class="flex items-center gap-2 flex-1 min-w-0 chapter-info-desktop">
+                    <!-- Three-dot menu -->
+                    <div class="relative chapter-menu-container flex-shrink-0">
+                        <button class="chapter-menu-btn p-1 hover:bg-neutral-700 rounded transition-colors"
+                                data-chapter-id="${chapter.id}"
+                                onclick="event.preventDefault(); event.stopPropagation(); toggleChapterMenu(this);">
+                            <svg class="w-4 h-4 text-neutral-500 hover:text-neutral-300" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </button>
+                        <div class="chapter-menu-dropdown hidden absolute left-0 top-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md shadow-xl z-50 min-w-[140px]">
+                            <button class="mark-as-read-btn w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-700 transition-colors rounded-md flex items-center gap-2"
+                                    onclick="event.preventDefault(); event.stopPropagation(); markChapterAsReadFromMenu(${chapter.id}, this);">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Mark as read</span>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="font-medium text-sm text-neutral-200 group-hover:text-orange-400 transition-colors">
+                        Ch. ${chapter.chapter}
+                    </span>
+                    ${isLastChapter ? '<span class="text-[10px] bg-neutral-700 text-neutral-400 px-1.5 py-0.5 rounded">END</span>' : ''}
+                    ${language !== 'en' ? `<span class="flex-shrink-0">${languageFlag}</span>` : ''}
+                    ${title ? `<span class="text-sm text-neutral-500 truncate ml-2">${title}</span>` : ''}
+                </div>
+                <div class="w-24 text-center flex-shrink-0 hidden lg:block">
+                    ${groupName ? `<span class="text-xs text-neutral-500 truncate">${groupName}</span>` : '<span class="text-neutral-700">—</span>'}
+                </div>
+                <div class="w-16 text-center flex-shrink-0">
+                    <span class="text-sm text-neutral-500">${likes}</span>
+                </div>
+                <div class="w-28 text-right flex-shrink-0">
+                    <span class="text-sm text-neutral-500">${chapter.date}</span>
+                </div>
+            </div>
+        </a>
+    `;
+    }
+
+    // Wire up search, order, group filters, and infinite scroll for chapter loading
+    function setupChapterControls() {
+        const chapterSearchInput = document.getElementById('chapterSearch');
+        const chapterOrderBtn = document.querySelector('.chapter-order');
+        const groupFilterBtns = document.querySelectorAll('.group-filter-btn');
+        const chapterListScroll = document.querySelector('.chapter-list');
+
+        if (chapterSearchInput) {
+            let searchTimeout;
+            chapterSearchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentSearch = e.target.value;
+                    currentOffset = 0;
+                    hasMoreChapters = true;
+                    loadChapters(true);
+                }, 300);
+            });
+        }
+
+        if (chapterOrderBtn) {
+            chapterOrderBtn.addEventListener('click', () => {
+                currentOrder = currentOrder === 'DESC' ? 'ASC' : 'DESC';
+                currentOffset = 0;
+                hasMoreChapters = true;
+                isAscending = currentOrder === 'ASC';
+                loadChapters(true);
+            });
+        }
+
+        groupFilterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                groupFilterBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-neutral-700', 'text-neutral-200');
+                    b.classList.add('bg-neutral-800', 'text-neutral-400');
+                });
+                btn.classList.add('active', 'bg-neutral-700', 'text-neutral-200');
+                btn.classList.remove('bg-neutral-800', 'text-neutral-400');
+
+                const groupId = btn.dataset.groupId;
+                currentGroupId = groupId === 'all' ? null : parseInt(groupId);
+                currentOffset = 0;
+                hasMoreChapters = true;
+                loadChapters(true);
+            });
+        });
+
+        if (chapterListScroll) {
+            chapterListScroll.addEventListener('scroll', () => {
+                const scrollPosition = chapterListScroll.scrollTop + chapterListScroll.clientHeight;
+                const scrollHeight = chapterListScroll.scrollHeight;
+
+                if (scrollPosition >= scrollHeight - 100 && hasMoreChapters && !isLoadingChapters) {
+                    loadChapters(false);
+                }
+            });
+        }
+    }
+
+    // Call setup once DOM is ready
+    setupChapterControls();
+
+    try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            isAuthenticated = true;
+        }
+    } catch (e) {
+        console.error('Error parsing stored user', e);
+    }
+
+    // Function to get chapters read
+    async function getChaptersRead(mangaId) {
+        if (!isAuthenticated || !mangaId) return [];
+
+        try {
+            const response = await fetch(`/auth/chapters-read?manga_id=${mangaId}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.success ? data.data : [];
+            }
+        } catch (error) {
+            console.error('Error fetching chapters read:', error);
+        }
+        return [];
+    }
+
+    // Function to mark chapters as read visually
+    // Function to mark chapters as read visually
+    async function markReadChapters() {
+        const body = document.querySelector('body');
+        const mangaId = body ? body.dataset.mangaId : null;
+
+        if (!mangaId) return;
+
+        const readChapterIds = await getChaptersRead(mangaId);
+
+        // Re-query chapter links to get dynamically loaded chapters
+        const chapterLinks = document.querySelectorAll('.chapter-list a');
+
+        chapterLinks.forEach(link => {
+            const chapterId = link.dataset.chapterId || link.getAttribute('href')?.match(/\/(\d+)\/?$/)?.[1];
+
+            if (chapterId && readChapterIds.includes(parseInt(chapterId))) {
+                if (!link.querySelector('.read-indicator')) {
+                    addReadIndicatorToChapter(link);
+                }
+                link.style.opacity = '0.65';
+            }
+        });
+    }
+
+    markReadChapters();
+
+    // Function to get reading history from server or localStorage
+    async function getReadingHistory(mangaId = null) {
+        if (isAuthenticated) {
+            try {
+                const response = await fetch('/auth/history', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        isAuthenticated = false;
+                        localStorage.removeItem('user');
+                        const localHistory = JSON.parse(localStorage.getItem('mangahistory')) || {};
+                        return mangaId ? localHistory[mangaId] : localHistory;
+                    }
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                const serverHistory = data.success ? data.data : {};
+                return mangaId ? serverHistory[mangaId] : serverHistory;
+            } catch (error) {
+                console.error('Error fetching reading history:', error);
+                const localHistory = JSON.parse(localStorage.getItem('mangahistory')) || {};
+                return mangaId ? localHistory[mangaId] : localHistory;
+            }
+        } else {
+            const localHistory = JSON.parse(localStorage.getItem('mangahistory')) || {};
+            return mangaId ? localHistory[mangaId] : localHistory;
+        }
+    }
+
+    // Function to get bookmarks from centralized API service
+    async function getBookmarks() {
+        if (isAuthenticated) {
+            try {
+                const data = await window.mangaTaroAPI.getBookmarks();
+                return data.success ? data.data : [];
+            } catch (error) {
+                console.error('Error fetching bookmarks:', error);
+                return JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+            }
+        } else {
+            return JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        }
+    }
+
+    // Expose the addReadingHistory function globally
+    window.addToHistory = async function (historyItem) {
+        let localHistory = JSON.parse(localStorage.getItem('mangahistory')) || {};
+        if (!historyItem.timestamp) {
+            historyItem.timestamp = Date.now();
+        }
+        localHistory[historyItem.mangaId] = historyItem;
+
+        let sortedHistory = Object.values(localHistory).sort((a, b) => b.timestamp - a.timestamp).slice(0, 15);
+        let newHistory = {};
+        sortedHistory.forEach(item => { newHistory[item.mangaId] = item; });
+        localStorage.setItem('mangahistory', JSON.stringify(newHistory));
+
+        if (isAuthenticated) {
+            try {
+                const response = await fetch('/auth/history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(historyItem)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error adding to server history:', error);
+            }
+        }
+
+        return true;
+    };
+
+    // Chapter search and order are now handled via API in setupChapterControls()
+
+    // Add to library functionality
+    function updateButtonState(inLibrary) {
+        const buttons = document.querySelectorAll('.add-to-library-btn, .mobile-add-to-library-btn');
+
+        const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>`;
+        const inLibraryIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21V5C5 3.89543 5.89543 3 7 3H17C18.1046 3 19 3.89543 19 5V21L12 17L5 21Z" /></svg>`;
+
+        buttons.forEach(btn => {
+            if (inLibrary) {
+                btn.innerHTML = inLibraryIcon;
+                btn.classList.remove('bg-neutral-800', 'hover:bg-neutral-700', 'text-neutral-200');
+                btn.classList.add('bg-orange-500/10', 'hover:bg-orange-500/30');
+                btn.setAttribute('aria-label', 'Remove from Library');
+            } else {
+                btn.innerHTML = plusIcon;
+                btn.classList.remove('bg-orange-500/10', 'hover:bg-orange-500/30');
+                btn.classList.add('bg-neutral-800', 'hover:bg-neutral-700', 'text-neutral-200');
+                btn.setAttribute('aria-label', 'Add to Library');
+            }
+        });
+    }
+
+    // Make sure to update the toggleLibrary function to work with both buttons
+    async function toggleLibrary(event) {
+        // Get the clicked button
+        const clickedBtn = event.currentTarget;
+
+        const mangaId = clickedBtn.dataset.mangaId;
+        const mangaUrl = clickedBtn.dataset.mangaUrl;
+        const mangaCover = clickedBtn.dataset.mangaCover;
+        const mangaTitle = clickedBtn.dataset.mangaTitle;
+
+        // Check current bookmark status
+        let library = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        const isCurrentlyBookmarked = library.some(item => item.id === mangaId);
+
+        if (isCurrentlyBookmarked) {
+            showBookmarkedMangaOptions(mangaId, mangaTitle);
+        } else {
+            showAddToLibraryModal(mangaId, mangaUrl, mangaCover, mangaTitle);
+        }
+    }
+
+    // Initialize both library buttons
+    function initializeLibraryButtons() {
+        const buttons = document.querySelectorAll('.add-to-library-btn, .mobile-add-to-library-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', toggleLibrary);
+        });
+
+        // Initialize button state
+        const firstBtn = buttons[0];
+        if (firstBtn) {
+            const mangaId = firstBtn.dataset.mangaId;
+            const localBookmarks = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+            const inLibrary = localBookmarks.some(item => item.id === mangaId);
+            updateButtonState(inLibrary);
+        }
+    }
+
+
+    initializeLibraryButtons();
+
+    // Show add to library modal with bookmark and list options
+    async function showAddToLibraryModal(mangaId, mangaUrl, mangaCover, mangaTitle) {
+        if (!isAuthenticated) {
+            // For non-authenticated users, just bookmark directly
+            await addToBookmarks(mangaId, mangaUrl, mangaCover, mangaTitle);
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'add-to-library-modal';
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+        modal.innerHTML = `
+            <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold text-neutral-100 mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add to Library
+                    </h3>
+                    <p class="text-neutral-300 text-sm mb-6">${mangaTitle}</p>
+
+                    <div class="space-y-3">
+                        <button onclick="addToBookmarksFromModal('${mangaId}', '${mangaUrl}', '${mangaCover}', '${mangaTitle}')"
+                                class="w-full flex items-center gap-3 p-4 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-lg transition-all duration-200 group">
+                            <div class="flex-shrink-0">
+                                <svg class="w-6 h-6 text-orange-400 group-hover:text-orange-300" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M5 21V5C5 3.89543 5.89543 3 7 3H17C18.1046 3 19 3.89543 19 5V21L12 17L5 21Z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 text-left">
+                                <h4 class="text-neutral-100 font-medium">Add to Bookmarks</h4>
+                                <p class="text-neutral-400 text-sm">Quick access in your library</p>
+                            </div>
+                            <svg class="w-5 h-5 text-neutral-400 group-hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+
+                        <div class="border-t border-neutral-700/50 pt-3">
+                            <h4 class="text-neutral-300 text-sm font-medium mb-3">Add to Lists</h4>
+                            <div id="user-lists-container" class="space-y-2 max-h-48 overflow-y-auto">
+                                <div class="flex items-center justify-center py-4">
+                                    <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
+                                    <span class="ml-2 text-neutral-400 text-sm">Loading lists...</span>
+                                </div>
+                            </div>
+
+                            <button onclick="showCreateListFromModal('${mangaId}')"
+                                    class="w-full mt-3 flex items-center gap-2 p-3 bg-neutral-500/10 hover:bg-neutral-500/20 border border-blue-500/30 rounded-lg transition-all duration-200 group">
+                                <svg class="w-5 h-5 text-neutral-400 group-hover:text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span class="text-neutral-400 group-hover:text-neutral-300 font-medium">Create New List</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="this.closest('.fixed').remove();"
+                            class="w-full mt-6 px-4 py-2 text-neutral-400 hover:text-neutral-100 text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Load user lists
+        await loadUserListsInModal(mangaId, mangaUrl, mangaCover, mangaTitle);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Close on Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    }
+
+    // Load user lists in the modal
+    async function loadUserListsInModal(mangaId, mangaUrl, mangaCover, mangaTitle) {
+        const container = document.getElementById('user-lists-container');
+        if (!container) return;
+
+        try {
+            const data = await window.mangaTaroAPI.getLists();
+
+            if (data.success && data.lists && data.lists.length > 0) {
+                container.innerHTML = data.lists.map(list => `
+                    <button onclick="addToListFromModal('${list.id}', '${mangaId}', '${mangaTitle}', '${list.title}')"
+                            class="w-full flex items-center gap-3 p-3 bg-neutral-700/30 hover:bg-neutral-700/50 border border-neutral-600/30 rounded-lg transition-all duration-200 group">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 text-neutral-400 group-hover:text-neutral-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 7a2 2 0 012-2h10a2 2 0 012 2v2M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2" />
+                            </svg>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <h4 class="text-neutral-100 font-medium text-sm">${list.title}</h4>
+                            <p class="text-neutral-400 text-xs">${list.item_count} items • ${list.public ? 'Public' : 'Private'}</p>
+                        </div>
+                        <svg class="w-4 h-4 text-neutral-400 group-hover:text-neutral-100 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-neutral-400 text-sm">No lists found. Create your first list!</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading lists:', error);
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-red-400 text-sm">Failed to load lists. Please try again.</p>
+                </div>
+            `;
+        }
+    }
+
+    // Add to bookmarks from modal
+    async function addToBookmarks(mangaId, mangaUrl, mangaCover, mangaTitle) {
+        const mangaData = {
+            id: mangaId,
+            url: mangaUrl,
+            cover: mangaCover,
+            title: mangaTitle,
+            dateAdded: Date.now()
+        };
+
+        // Add to localStorage first for immediate UI update
+        let library = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        const existingIndex = library.findIndex(item => item.id === mangaData.id);
+        if (existingIndex > -1) {
+            library.splice(existingIndex, 1);
+        }
+        library.push(mangaData);
+        localStorage.setItem('mangaLibrary', JSON.stringify(library));
+        updateButtonState(true);
+
+        // Sync with server using centralized API
+        if (isAuthenticated) {
+            try {
+                await window.mangaTaroAPI.addBookmark(mangaData);
+            } catch (error) {
+                console.error('Error adding bookmark to server:', error);
+            }
+        }
+
+        showToast('Added to bookmarks', 'success');
+    }
+
+    // Show bookmarked manga options (when manga is already bookmarked)
+    function showBookmarkedMangaOptions(mangaId, mangaTitle) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+        modal.innerHTML = `
+            <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-neutral-100 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5 21V5C5 3.89543 5.89543 3 7 3H17C18.1046 3 19 3.89543 19 5V21L12 17L5 21Z" />
+                        </svg>
+                        Manage Bookmark
+                    </h3>
+                    <p class="text-neutral-300 text-sm mb-4">${mangaTitle}</p>
+
+                    <div class="flex flex-col gap-3">
+                        <button onclick="removeFromBookmarks('${mangaId}'); this.closest('.fixed').remove();"
+                                class="w-full px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Remove from Bookmarks
+                        </button>
+                    </div>
+
+                    <button onclick="this.closest('.fixed').remove();"
+                            class="w-full mt-4 px-4 py-2 text-neutral-400 hover:text-neutral-100 text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-lg backdrop-blur-sm border max-w-sm ${type === 'success' ? 'bg-neutral-800/90 text-neutral-200 border-neutral-700/50' :
+            type === 'error' ? 'bg-red-500/90 text-neutral-100 border-red-600/50' :
+                'bg-neutral-500/90 text-neutral-100 border-blue-600/50'
+            }`;
+
+        toast.innerHTML = `
+            <div class="flex items-start gap-2">
+                <div class="flex-1 text-sm">${message}</div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-neutral-100/80 hover:text-neutral-100 text-lg leading-none">×</button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Initialize button state IMMEDIATELY - no more delay!
+    function initializeButtonState() {
+        if (!addToLibraryBtn) return;
+
+        const mangaId = addToLibraryBtn.dataset.mangaId;
+        // Check localStorage immediately (synchronous - no delay)
+        const localBookmarks = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        const inLibrary = localBookmarks.some(item => item.id === mangaId);
+        updateButtonState(inLibrary);
+    }
+
+    // Call immediately - zero delay
+    initializeButtonState();
+
+    // Sync with server in background (optional, for consistency)
+    async function syncBookmarksWithServer() {
+        if (!isAuthenticated || !addToLibraryBtn) return;
+
+        try {
+            const mangaId = addToLibraryBtn.dataset.mangaId;
+            const data = await window.mangaTaroAPI.getBookmarks();
+
+            if (data.success) {
+                const serverBookmarks = data.data || [];
+                const isServerBookmarked = serverBookmarks.some(item => item.id === mangaId);
+
+                // Check if server state differs from localStorage
+                const localBookmarks = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+                const isLocalBookmarked = localBookmarks.some(item => item.id === mangaId);
+
+                // Only update if there's a mismatch (rare case)
+                if (isServerBookmarked !== isLocalBookmarked) {
+                    updateButtonState(isServerBookmarked);
+                    // Sync localStorage with server state
+                    localStorage.setItem('mangaLibrary', JSON.stringify(serverBookmarks));
+                }
+            }
+        } catch (error) {
+            console.error('Background sync error:', error);
+            // Keep localStorage state on error
+        }
+    }
+
+    // Background sync - doesn't affect initial UI
+    syncBookmarksWithServer();
+
+    // Description expand/collapse functionality
+    function toggleDescription() {
+        if (!descriptionContainer || !descriptionFade || !toggleDescriptionBtn) return;
+
+        const fullHeight = descriptionContent.scrollHeight;
+        const collapsedHeight = 150;
+        const buffer = 20;
+
+        if (isDescriptionExpanded) {
+            descriptionContainer.style.maxHeight = `${collapsedHeight}px`;
+            descriptionFade.style.display = 'block';
+            toggleDescriptionBtn.textContent = 'Read more';
+        } else {
+            descriptionContainer.style.maxHeight = `${fullHeight + buffer}px`;
+            descriptionFade.style.display = 'none';
+            toggleDescriptionBtn.textContent = 'Read less';
+        }
+        isDescriptionExpanded = !isDescriptionExpanded;
+    }
+
+    function initializeDescription() {
+        if (!descriptionContainer || !descriptionContent || !descriptionFade || !toggleDescriptionBtn) return;
+
+        const fullHeight = descriptionContent.scrollHeight;
+        const collapsedHeight = 150;
+
+        if (fullHeight > collapsedHeight) {
+            descriptionContainer.style.maxHeight = `${collapsedHeight}px`;
+            descriptionFade.style.display = 'block';
+            toggleDescriptionBtn.style.display = 'block';
+        } else {
+            descriptionContainer.style.maxHeight = 'none';
+            descriptionFade.style.display = 'none';
+            toggleDescriptionBtn.style.display = 'none';
+        }
+    }
+
+    if (descriptionContainer && descriptionContent && descriptionFade && toggleDescriptionBtn) {
+        initializeDescription();
+        toggleDescriptionBtn.addEventListener('click', toggleDescription);
+    }
+
+    // Function to update the Start Reading button to Continue Reading if user has history
+    async function updateStartReadingButton() {
+        const body = document.querySelector('body');
+        if (!body) return;
+
+        const mangaId = body.dataset.mangaId;
+        if (!mangaId) return;
+
+        const startReadingBtn = document.querySelector('#start-reading-btn');
+        const mobileStartReadingBtn = document.querySelector('.mobile-start-reading-btn');
+
+        if (!startReadingBtn && !mobileStartReadingBtn) return;
+
+        let chapterNumber = null;
+        let chapterUrl = null;
+
+        try {
+            const readingHistory = await getReadingHistory(mangaId);
+            if (readingHistory && readingHistory.chapterNumber && readingHistory.chapterUrl) {
+                chapterNumber = readingHistory.chapterNumber;
+                chapterUrl = readingHistory.chapterUrl;
+            }
+        } catch (error) {
+            console.error('Error fetching reading history:', error);
+        }
+
+        if (chapterNumber && chapterUrl) {
+            // Update desktop button
+            if (startReadingBtn) {
+                const originalSvg = startReadingBtn.querySelector('svg')?.outerHTML || '';
+                startReadingBtn.innerHTML = `
+                    ${originalSvg}
+                    <span class="button-text text-xs">Continue / ${chapterNumber}</span>
+                `;
+                startReadingBtn.href = chapterUrl;
+            }
+
+            // Update mobile button
+            if (mobileStartReadingBtn) {
+                const mobileSvg = mobileStartReadingBtn.querySelector('svg')?.outerHTML || '';
+                mobileStartReadingBtn.innerHTML = `
+                    ${mobileSvg}
+                    <span class="button-text">Continue / ${chapterNumber}</span>
+                `;
+                mobileStartReadingBtn.href = chapterUrl;
+            }
+        }
+    }
+
+    updateStartReadingButton();
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Tab functionality
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => {
+                t.classList.remove('active', 'text-neutral-100');
+                t.classList.add('text-neutral-400', 'hover:text-neutral-200');
+                const indicator = t.querySelector('.tab-indicator');
+                if (indicator) indicator.classList.add('hidden');
+            });
+            tabContents.forEach(content => {
+                if (content) content.classList.add('hidden');
+            });
+
+            tab.classList.add('active', 'text-neutral-100');
+            tab.classList.remove('text-neutral-400', 'hover:text-neutral-200');
+            const activeIndicator = tab.querySelector('.tab-indicator');
+            if (activeIndicator) activeIndicator.classList.remove('hidden');
+
+            const targetContentId = tab.dataset.tabTarget;
+            if (targetContentId) {
+                const activeContent = document.querySelector(targetContentId);
+                if (activeContent) {
+                    activeContent.classList.remove('hidden');
+
+                    // Initialize lazy-loaded components when their tabs are clicked
+                    if (targetContentId === '#tab-reviews' && typeof window.initializeReviews === 'function') {
+                        window.initializeReviews();
+                    } else if (targetContentId === '#tab-comments' && typeof window.initializeComments === 'function') {
+                        window.initializeComments();
+                    } else if (targetContentId === '#tab-chapters') {
+                        loadChaptersIfNeeded();
+                    }
+                }
+            }
+        });
+    });
+
+    if (tabs.length > 0) {
+        const alreadyActiveTab = document.querySelector('.tabs-item.active');
+        if (!alreadyActiveTab) {
+            tabs[0].click();
+        } else {
+            const targetContentId = alreadyActiveTab.dataset.tabTarget;
+            if (targetContentId) {
+                const activeContent = document.querySelector(targetContentId);
+                if (activeContent) {
+                    tabContents.forEach(content => {
+                        if (content) content.classList.add('hidden');
+                    });
+                    activeContent.classList.remove('hidden');
+
+                    // Initialize lazy-loaded components if already active on page load
+                    if (targetContentId === '#tab-reviews' && typeof window.initializeReviews === 'function') {
+                        window.initializeReviews();
+                    } else if (targetContentId === '#tab-comments' && typeof window.initializeComments === 'function') {
+                        window.initializeComments();
+                    }
+                }
+                const activeIndicator = alreadyActiveTab.querySelector('.tab-indicator');
+                if (activeIndicator) activeIndicator.classList.remove('hidden');
+            }
+        }
+    }
+
+    initializeOfflineDownload();
+});
+
+function initializeOfflineDownload() {
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+        return; // Don't show offline button for non-authenticated users
+    }
+
+    // Wait for offline manager to be available
+    if (typeof window.offlineManager === 'undefined') {
+        loadOfflineManager().then(() => {
+            setupDownloadButton();
+        });
+    } else {
+        setupDownloadButton();
+    }
+}
+
+function loadOfflineManager() {
+    // Offline manager is now loaded in footer.php
+    return new Promise((resolve) => {
+        if (window.offlineManager) {
+            resolve();
+            return;
+        }
+
+        // Wait for offline manager to be available
+        const checkInterval = setInterval(() => {
+            if (window.offlineManager) {
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 100);
+    });
+}
+function isMobileView() {
+    return window.innerWidth < 768; // md breakpoint
+}
+
+// Helper to get the correct action buttons container
+function getActionButtonsContainer() {
+    if (isMobileView()) {
+        return document.getElementById('mobile-action-buttons');
+    }
+    return document.getElementById('desktop-action-buttons');
+}
+function setupDownloadButton() {
+    // We need to handle BOTH containers since user might resize
+    const desktopContainer = document.getElementById('desktop-action-buttons');
+    const mobileContainer = document.getElementById('mobile-action-buttons');
+
+    if (!desktopContainer && !mobileContainer) {
+        // Fallback to old method
+        const addToLibraryBtn = document.querySelector('.add-to-library-btn');
+        if (!addToLibraryBtn) return;
+
+        const downloadBtn = createDownloadButton('');
+        const flexContainer = addToLibraryBtn.parentNode;
+        flexContainer.parentNode.insertBefore(downloadBtn, flexContainer.nextSibling);
+        checkDownloadStatus();
+        setTimeout(() => initializeMangaStatus(), 100);
+        return;
+    }
+
+    // Create buttons for both containers
+    if (desktopContainer) {
+        const desktopDownloadBtn = createDownloadButton('desktop');
+        // Find the Read button to insert after its container
+        const readBtn = desktopContainer.querySelector('#start-reading-btn');
+        if (readBtn) {
+            // Insert after the parent div of the read button (which contains read + library buttons)
+            // Note: readBtn itself has .flex class, so we need the parent which is the row container
+            const buttonRow = readBtn.parentElement;
+            if (buttonRow && buttonRow.classList.contains('flex')) {
+                buttonRow.after(desktopDownloadBtn);
+            } else {
+                desktopContainer.appendChild(desktopDownloadBtn);
+            }
+        } else {
+            // Fallback to appending
+            desktopContainer.appendChild(desktopDownloadBtn);
+        }
+    }
+
+    if (mobileContainer) {
+        const mobileDownloadBtn = createDownloadButton('mobile');
+        // Find the Read button to insert after its container
+        const readBtn = mobileContainer.querySelector('.mobile-start-reading-btn');
+        if (readBtn) {
+            // Insert after the parent div of the read button
+            // Note: readBtn itself has .flex class, so we need the parent which is the row container
+            const buttonRow = readBtn.parentElement;
+            if (buttonRow && buttonRow.classList.contains('flex')) {
+                buttonRow.after(mobileDownloadBtn);
+            } else {
+                mobileContainer.appendChild(mobileDownloadBtn);
+            }
+        } else {
+            mobileContainer.appendChild(mobileDownloadBtn);
+        }
+    }
+
+    // Check download status (will update all buttons)
+    checkDownloadStatus();
+
+    // Initialize manga status button
+    setTimeout(() => initializeMangaStatus(), 100);
+}
+
+
+function createDownloadButton(variant = '') {
+    const downloadBtn = document.createElement('button');
+    const suffix = variant ? `-${variant}` : '';
+    const isMobile = variant === 'mobile';
+
+    downloadBtn.className = `offline-download-btn${suffix} w-full flex items-center justify-center gap-2 bg-neutral-500/10 hover:bg-neutral-500/30 text-neutral-400 px-4 ${isMobile ? 'py-2' : 'py-2.5'} rounded-lg font-medium transition-all duration-300 ${isMobile ? 'text-xs sm:text-sm' : 'text-sm'}`;
+    downloadBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="${isMobile ? 'h-4 w-4' : 'h-5 w-5'}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span>Read Offline</span>
+    `;
+    downloadBtn.title = 'Download for offline reading';
+    downloadBtn.setAttribute('aria-label', 'Download for offline reading');
+    downloadBtn.addEventListener('click', handleDownloadClick);
+
+    return downloadBtn;
+}
+
+async function checkDownloadStatus() {
+    try {
+        const body = document.querySelector('body');
+        const mangaId = body.dataset.mangaId;
+
+        if (!mangaId || !window.offlineManager) return;
+
+        // Check if offline manager database is ready
+        if (!window.offlineManager.db) {
+            // Wait for database to be ready
+            setTimeout(checkDownloadStatus, 500);
+            return;
+        }
+
+        // Check if offline manager has the required methods before proceeding
+        if (typeof window.offlineManager.getDownloadedManga !== 'function') {
+            // Retry after a short delay if methods aren't ready yet
+            setTimeout(checkDownloadStatus, 200);
+            return;
+        }
+
+        const downloadedManga = await window.offlineManager.getDownloadedManga();
+        const isDownloaded = downloadedManga.some(manga => manga.id === mangaId);
+
+        updateDownloadButtonState(isDownloaded);
+    } catch (error) {
+        console.error('Error checking download status:', error);
+        // Silently fail and show default state if there's an error
+        updateDownloadButtonState(false);
+    }
+}
+
+function updateDownloadButtonState(isDownloaded, isDownloading = false, progress = 0) {
+    // Get all download buttons (desktop and mobile variants)
+    const downloadBtns = document.querySelectorAll('[class*="offline-download-btn"]');
+
+    downloadBtns.forEach(downloadBtn => {
+        const isMobile = downloadBtn.className.includes('mobile');
+        const iconSize = isMobile ? 'h-4 w-4' : 'h-5 w-5';
+        const pyClass = isMobile ? 'py-2' : 'py-2.5';
+        const textSize = isMobile ? 'text-xs sm:text-sm' : 'text-sm';
+        const baseClasses = `w-full flex items-center justify-center gap-2 px-4 ${pyClass} rounded-lg font-medium ${textSize}`;
+
+        // Preserve the variant class
+        const variantClass = isMobile ? 'offline-download-btn-mobile' : (downloadBtn.className.includes('desktop') ? 'offline-download-btn-desktop' : 'offline-download-btn');
+
+        if (isDownloading) {
+            downloadBtn.className = `${variantClass} ${baseClasses} bg-orange-500/20 text-orange-400 cursor-not-allowed`;
+            downloadBtn.innerHTML = `
+                <svg class="animate-spin ${iconSize}" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Downloading... ${progress}%</span>
+            `;
+            downloadBtn.disabled = true;
+        } else if (isDownloaded) {
+            downloadBtn.className = `${variantClass} ${baseClasses} bg-orange-500/10 hover:bg-orange-500/30 text-orange-400 transition-all duration-300`;
+            downloadBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="${iconSize}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Available Offline</span>
+            `;
+            downloadBtn.disabled = false;
+        } else {
+            downloadBtn.className = `${variantClass} ${baseClasses} bg-neutral-500/10 hover:bg-neutral-500/30 text-neutral-400 transition-all duration-300`;
+            downloadBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="${iconSize}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Read Offline</span>
+            `;
+            downloadBtn.disabled = false;
+        }
+    });
+}
+
+async function handleDownloadClick(event) {
+    event.preventDefault();
+
+    const body = document.querySelector('body');
+    const mangaId = body.dataset.mangaId;
+
+    if (!mangaId || !window.offlineManager) {
+        alert('Download functionality not available');
+        return;
+    }
+
+    try {
+        // Check if already downloaded
+        const downloadedManga = await window.offlineManager.getDownloadedManga();
+        const isDownloaded = downloadedManga.some(manga => manga.id === mangaId);
+
+        if (isDownloaded) {
+            // Show options: read offline or re-download
+            showDownloadedMangaOptions(mangaId);
+            return;
+        }
+
+        // Check download limit (5 manga maximum)
+        if (downloadedManga.length >= 5) {
+            showDownloadLimitModal();
+            return;
+        }
+
+        // Check if currently downloading
+        if (window.offlineManager.downloadQueue.has(mangaId)) {
+            alert('This manga is already being downloaded');
+            return;
+        }
+
+        // Show chapter selection modal
+        showChapterSelectionModal(mangaId);
+
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert(`Download failed: ${error.message}`);
+    }
+}
+
+async function showChapterSelectionModal(mangaId, isRedownload = false) {
+    const mangaTitle = document.querySelector('h1')?.textContent || 'Unknown Manga';
+
+    // Fetch chapters from API instead of DOM (since chapters are dynamically loaded)
+    let chapters = [];
+    try {
+        // Generate anti-scraping token using global function
+        const { token, timestamp } = generateToken();
+
+        const params = new URLSearchParams({
+            manga_id: mangaId,
+            offset: 0,
+            limit: 500,
+            order: 'DESC',
+            _t: token,
+            _ts: timestamp
+        });
+
+        const response = await fetch(`/auth/manga-chapters?${params}`, {
+            credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error('Failed to load chapters');
+
+        const data = await response.json();
+
+        if (!data.success || !data.chapters || data.chapters.length === 0) {
+            alert('No chapters available for download');
+            return;
+        }
+
+        // Map API data to chapter format expected by modal
+        chapters = data.chapters.map(ch => ({
+            number: ch.chapter,
+            title: ch.title || '',
+            url: ch.url,
+            isDownloaded: false // Will be updated below
+        }));
+
+    } catch (error) {
+        console.error('Failed to fetch chapters:', error);
+        alert('Failed to load chapters. Please try again.');
+        return;
+    }
+
+    // Get already downloaded chapters if this is a re-download
+    let downloadedChapters = [];
+    if (isRedownload && window.offlineManager) {
+        try {
+            downloadedChapters = await window.offlineManager.getMangaChapters(mangaId);
+
+            // Mark downloaded chapters
+            chapters.forEach(ch => {
+                ch.isDownloaded = downloadedChapters.some(downloaded =>
+                    downloaded.chapterNumber === ch.number
+                );
+            });
+        } catch (error) {
+            console.error('Failed to get downloaded chapters:', error);
+        }
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'chapter-selection-modal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+
+    modal.innerHTML = `
+        <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col border border-neutral-700/50">
+            <div class="p-4 sm:p-6 border-b border-neutral-700/50 flex-shrink-0">
+                <h3 class="text-lg sm:text-xl font-semibold text-neutral-100 mb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-neutral-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="truncate">${isRedownload ? 'Add More Chapters' : 'Select Chapters to Download'}</span>
+                </h3>
+                <p class="text-neutral-300 text-sm mb-3 sm:mb-4 truncate">${mangaTitle}</p>
+                ${isRedownload ? `<p class="text-orange-400 text-xs sm:text-sm mb-3 sm:mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Downloaded chapters are marked and cannot be re-downloaded</span>
+                </p>` : ''}
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button id="select-all-chapters" class="px-2.5 sm:px-3 py-1.5 bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-400 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
+                            ${isRedownload ? 'Select Available' : 'Select All'}
+                        </button>
+                        <button id="select-none-chapters" class="px-2.5 sm:px-3 py-1.5 bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-400 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
+                            Select None
+                        </button>
+                        <button id="select-latest-chapters" class="px-2.5 sm:px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
+                            ${isRedownload ? 'Latest Available' : 'Latest 10'}
+                        </button>
+                    </div>
+                    <div class="text-xs sm:text-sm text-neutral-400 whitespace-nowrap">
+                        <span id="selected-count">0</span>/${chapters.length} chapters
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                <div class="p-3 sm:p-4">
+                    ${chapters.map(chapter => `
+                        <div class="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-neutral-700/30 rounded-lg transition-colors chapter-item ${chapter.isDownloaded ? 'opacity-60' : ''}">
+                            <input type="checkbox"
+                                   id="chapter-${chapter.number}"
+                                   class="chapter-checkbox w-4 h-4 text-neutral-500 bg-neutral-700 border-neutral-600 rounded focus:ring-blue-500 focus:ring-2 flex-shrink-0"
+                                   data-chapter-number="${chapter.number}"
+                                   data-chapter-url="${chapter.url}"
+                                   ${chapter.isDownloaded ? 'disabled' : ''}>
+                            <label for="chapter-${chapter.number}" class="flex-1 cursor-pointer min-w-0">
+                                <div class="font-medium text-sm sm:text-base text-neutral-200 flex items-center gap-2 flex-wrap">
+                                    <span>Chapter ${chapter.number}</span>
+                                    ${chapter.isDownloaded ? `
+                                        <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Downloaded
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                ${chapter.title ? `<div class="text-xs sm:text-sm text-neutral-400 truncate mt-0.5">${chapter.title}</div>` : ''}
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-6 border-t border-neutral-700/50 flex gap-2 sm:gap-3 flex-shrink-0">
+                <button onclick="this.closest('.fixed').remove();"
+                        class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-400 rounded-lg text-sm font-medium transition-all duration-200">
+                    Cancel
+                </button>
+                <button onclick="startSelectedDownload('${mangaId}', ${isRedownload})"
+                        class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-400 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="hidden xs:inline">${isRedownload ? 'Download Additional' : 'Download Selected'}</span>
+                    <span class="xs:hidden">Download</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    setupChapterSelectionEvents(isRedownload);
+
+    // Remove on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+function setupChapterSelectionEvents(isRedownload = false) {
+    const modal = document.getElementById('chapter-selection-modal');
+    if (!modal) return;
+
+    const checkboxes = modal.querySelectorAll('.chapter-checkbox:not(:disabled)'); // Only enabled checkboxes
+    const allCheckboxes = modal.querySelectorAll('.chapter-checkbox'); // All checkboxes for counting
+    const selectedCount = modal.querySelector('#selected-count');
+    const selectAllBtn = modal.querySelector('#select-all-chapters');
+    const selectNoneBtn = modal.querySelector('#select-none-chapters');
+    const selectLatestBtn = modal.querySelector('#select-latest-chapters');
+
+    // Update selected count
+    function updateSelectedCount() {
+        const count = modal.querySelectorAll('.chapter-checkbox:checked').length;
+        selectedCount.textContent = count;
+    }
+
+    // Add checkbox event listeners (only for enabled checkboxes)
+    allCheckboxes.forEach(checkbox => {
+        if (!checkbox.disabled) {
+            checkbox.addEventListener('change', updateSelectedCount);
+        }
+    });
+
+    // Select all button (only enabled chapters)
+    selectAllBtn.addEventListener('click', () => {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectedCount();
+    });
+
+    // Select none button (only enabled chapters)
+    selectNoneBtn.addEventListener('click', () => {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateSelectedCount();
+    });
+
+    // Select latest 10 button (only enabled chapters)
+    selectLatestBtn.addEventListener('click', () => {
+        // First uncheck all enabled
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Select first 10 available (latest chapters are typically at the top)
+        Array.from(checkboxes).slice(0, 10).forEach(checkbox => {
+            checkbox.checked = true;
+        });
+
+        updateSelectedCount();
+    });
+
+    // Initialize count
+    updateSelectedCount();
+}
+
+function showDownloadLimitModal() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+    modal.innerHTML = `
+        <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-neutral-100 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Download Limit Reached
+                </h3>
+                <p class="text-neutral-300 text-sm mb-6">
+                    You've reached the maximum limit of 5 downloaded manga. To download more manga, you need to delete some from your offline storage first.
+                </p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="window.location.href='/offline'"
+                            class="w-full px-4 py-2.5 bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-400 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Manage Downloads
+                    </button>
+                </div>
+                <button onclick="this.closest('.fixed').remove();"
+                        class="w-full mt-4 px-4 py-2 text-neutral-400 hover:text-neutral-100 text-sm transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Remove on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+function showDownloadedMangaOptions(mangaId) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+    modal.innerHTML = `
+        <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-neutral-100 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Manga Available Offline
+                </h3>
+                <p class="text-neutral-300 text-sm mb-6">
+                    This manga is already downloaded. What would you like to do?
+                </p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="window.location.href='/offline/manga/${mangaId}'"
+                            class="w-full px-4 py-2.5 bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-400 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Read Offline
+                    </button>
+                    <button onclick="redownloadManga('${mangaId}'); this.closest('.fixed').remove();"
+                            class="w-full px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Re-download
+                    </button>
+                    <button onclick="deleteMangaOffline('${mangaId}'); this.closest('.fixed').remove();"
+                            class="w-full px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Download
+                    </button>
+                </div>
+                <button onclick="this.closest('.fixed').remove();"
+                        class="w-full mt-4 px-4 py-2 text-neutral-400 hover:text-neutral-100 text-sm transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Remove on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function showDownloadProgress(mangaId, mangaTitle) {
+    const progressModal = document.createElement('div');
+    progressModal.id = 'download-progress-modal';
+    progressModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+    progressModal.innerHTML = `
+        <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-neutral-100 mb-2 flex items-center gap-2">
+                    <svg class="animate-spin w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Downloading Manga
+                </h3>
+                <p class="text-neutral-300 text-sm mb-4 truncate">${mangaTitle}</p>
+
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-neutral-400 mb-2">
+                        <span class="progress-text">Preparing download...</span>
+                        <span class="progress-percentage">0%</span>
+                    </div>
+                    <div class="w-full bg-neutral-700 rounded-full h-2 overflow-hidden">
+                        <div class="progress-bar bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-neutral-500 mb-4">
+                    <div class="download-stats">
+                        <div>Chapters: <span class="chapters-downloaded">0</span>/<span class="chapters-total">0</span></div>
+                        <div>Status: <span class="download-status">Initializing...</span></div>
+                    </div>
+                </div>
+
+                <button onclick="cancelDownload('${mangaId}')"
+                        class="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-all duration-200">
+                    Cancel Download
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(progressModal);
+
+    // Set up progress monitoring
+    monitorDownloadProgress(mangaId);
+}
+
+function monitorDownloadProgress(mangaId) {
+    const progressModal = document.getElementById('download-progress-modal');
+    if (!progressModal) return;
+
+    const progressBar = progressModal.querySelector('.progress-bar');
+    const progressText = progressModal.querySelector('.progress-text');
+    const progressPercentage = progressModal.querySelector('.progress-percentage');
+    const chaptersDownloaded = progressModal.querySelector('.chapters-downloaded');
+    const chaptersTotal = progressModal.querySelector('.chapters-total');
+    const downloadStatus = progressModal.querySelector('.download-status');
+
+    const updateInterval = setInterval(() => {
+        if (!window.offlineManager || !window.offlineManager.downloadQueue.has(mangaId)) {
+            clearInterval(updateInterval);
+            return;
+        }
+
+        const downloadInfo = window.offlineManager.downloadQueue.get(mangaId);
+
+        // Update progress bar and button
+        if (progressBar) progressBar.style.width = `${downloadInfo.progress}%`;
+        if (progressPercentage) progressPercentage.textContent = `${downloadInfo.progress}%`;
+        if (chaptersDownloaded) chaptersDownloaded.textContent = downloadInfo.downloadedChapters;
+        if (chaptersTotal) chaptersTotal.textContent = downloadInfo.totalChapters;
+        if (downloadStatus) downloadStatus.textContent = downloadInfo.status;
+
+        // Update button state
+        updateDownloadButtonState(false, true, downloadInfo.progress);
+
+        if (progressText) {
+            if (downloadInfo.status === 'downloading') {
+                progressText.textContent = `Downloading chapters (${downloadInfo.downloadedChapters}/${downloadInfo.totalChapters})`;
+            } else if (downloadInfo.status === 'completed') {
+                progressText.textContent = 'Download completed!';
+                clearInterval(updateInterval);
+                // Update button to show "Available Offline" when complete
+                updateDownloadButtonState(true, false, 100);
+                setTimeout(() => hideDownloadProgress(), 2000);
+            } else if (downloadInfo.status === 'failed') {
+                progressText.textContent = `Download failed: ${downloadInfo.error}`;
+                // Update button back to "Read Offline" when failed
+                updateDownloadButtonState(false, false, 0);
+                clearInterval(updateInterval);
+            }
+        }
+    }, 1000);
+}
+
+function hideDownloadProgress() {
+    const progressModal = document.getElementById('download-progress-modal');
+    if (progressModal) {
+        progressModal.remove();
+    }
+}
+
+// Global function for starting selected chapter download
+window.startSelectedDownload = async function (mangaId, isRedownload = false) {
+    const modal = document.getElementById('chapter-selection-modal');
+    if (!modal) return;
+
+    const selectedCheckboxes = modal.querySelectorAll('.chapter-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one chapter to download');
+        return;
+    }
+
+    const selectedChapters = Array.from(selectedCheckboxes).map(checkbox => {
+        const label = checkbox.closest('.chapter-item')?.querySelector('label');
+        const titleElement = label?.querySelector('.text-neutral-400');
+
+        return {
+            number: checkbox.dataset.chapterNumber,
+            url: checkbox.dataset.chapterUrl,
+            title: titleElement?.textContent?.trim() || ''
+        };
+    });
+
+    const mangaTitle = document.querySelector('h1')?.textContent || 'Unknown Manga';
+    const actionText = isRedownload ? 'add' : 'download';
+
+    if (!confirm(`${isRedownload ? 'Add' : 'Download'} ${selectedChapters.length} selected chapters ${isRedownload ? 'to' : 'from'} "${mangaTitle}"?\n\nThis may take several minutes and use significant storage space.`)) {
+        return;
+    }
+
+    // Close modal
+    modal.remove();
+
+    try {
+        // Update button state
+        updateDownloadButtonState(false, true, 0);
+        showDownloadProgress(mangaId, mangaTitle);
+
+        if (isRedownload) {
+            // Add additional chapters to existing download
+            await downloadAdditionalChapters(mangaId, selectedChapters);
+        } else {
+            // Start fresh selective download
+            await downloadSelectedChapters(mangaId, selectedChapters);
+        }
+
+        // Download completed
+        updateDownloadButtonState(true, false, 100);
+        hideDownloadProgress();
+
+    } catch (error) {
+        console.error('Download failed:', error);
+        hideDownloadProgress();
+        updateDownloadButtonState(false, false, 0);
+        alert(`Download failed: ${error.message}`);
+    }
+};
+
+async function downloadSelectedChapters(mangaId, selectedChapters) {
+    if (!window.offlineManager) {
+        throw new Error('Offline manager not available');
+    }
+
+    // Get manga data first (metadata only, chapters will be built from selected)
+    const mangaData = await window.offlineManager.getMangaData(mangaId);
+    if (!mangaData) {
+        throw new Error('Could not fetch manga data');
+    }
+
+    // Build chapter objects from selected chapters (which already have URLs from the API)
+    const filteredChapters = selectedChapters.map(selected => ({
+        id: window.offlineManager.extractChapterIdFromUrl(selected.url),
+        url: selected.url,
+        title: selected.title || '',
+        chapterNumber: selected.number,
+        mangaId: mangaId
+    }));
+
+    // Update manga data with filtered chapters
+    mangaData.chapters = filteredChapters;
+
+    const downloadInfo = {
+        mangaId,
+        status: 'initializing',
+        progress: 0,
+        totalChapters: filteredChapters.length,
+        downloadedChapters: 0,
+        failedChapters: [],
+        startTime: Date.now(),
+        manga: mangaData
+    };
+
+    window.offlineManager.downloadQueue.set(mangaId, downloadInfo);
+    await window.offlineManager.updateDownloadProgress(mangaId, downloadInfo);
+
+    // Download cover image first
+    if (mangaData.cover) {
+        await window.offlineManager.cacheCoverImage(mangaId, mangaData.cover);
+    }
+
+    await window.offlineManager.saveMangaMetadata(mangaData);
+
+    window.offlineManager.showNotification('Download Started', `Downloading ${filteredChapters.length} chapters from "${mangaData.title}"`, 'info');
+
+    // Download selected chapters
+    await window.offlineManager.downloadChaptersBatch(mangaId, filteredChapters);
+
+    downloadInfo.status = 'completed';
+    downloadInfo.progress = 100;
+    downloadInfo.completedTime = Date.now();
+    await window.offlineManager.updateDownloadProgress(mangaId, downloadInfo);
+
+    window.offlineManager.showNotification('Download Complete', `Selected chapters from "${mangaData.title}" are now available offline`, 'success');
+}
+
+async function downloadAdditionalChapters(mangaId, selectedChapters) {
+    if (!window.offlineManager) {
+        throw new Error('Offline manager not available');
+    }
+
+    // Get manga data first (metadata only, chapters will be built from selected)
+    const mangaData = await window.offlineManager.getMangaData(mangaId);
+    if (!mangaData) {
+        throw new Error('Could not fetch manga data');
+    }
+
+    // Get already downloaded chapters
+    const existingChapters = await window.offlineManager.getMangaChapters(mangaId);
+    const existingChapterNumbers = existingChapters.map(ch => ch.chapterNumber);
+
+    // Build chapter objects from selected chapters that aren't already downloaded
+    const newChaptersToDownload = selectedChapters
+        .filter(selected => !existingChapterNumbers.includes(selected.number))
+        .map(selected => ({
+            id: window.offlineManager.extractChapterIdFromUrl(selected.url),
+            url: selected.url,
+            title: selected.title || '',
+            chapterNumber: selected.number,
+            mangaId: mangaId
+        }));
+
+    if (newChaptersToDownload.length === 0) {
+        throw new Error('No new chapters to download (all selected chapters are already downloaded)');
+    }
+
+    const downloadInfo = {
+        mangaId,
+        status: 'initializing',
+        progress: 0,
+        totalChapters: newChaptersToDownload.length,
+        downloadedChapters: 0,
+        failedChapters: [],
+        startTime: Date.now(),
+        manga: mangaData
+    };
+
+    window.offlineManager.downloadQueue.set(mangaId, downloadInfo);
+    await window.offlineManager.updateDownloadProgress(mangaId, downloadInfo);
+
+    window.offlineManager.showNotification('Download Started', `Downloading ${newChaptersToDownload.length} additional chapters from "${mangaData.title}"`, 'info');
+
+    // Download new chapters only
+    await window.offlineManager.downloadChaptersBatch(mangaId, newChaptersToDownload);
+
+    downloadInfo.status = 'completed';
+    downloadInfo.progress = 100;
+    downloadInfo.completedTime = Date.now();
+    await window.offlineManager.updateDownloadProgress(mangaId, downloadInfo);
+
+    window.offlineManager.showNotification('Download Complete', `${newChaptersToDownload.length} additional chapters added to "${mangaData.title}"`, 'success');
+}
+
+// Global functions for modal actions
+window.redownloadManga = async function (mangaId) {
+    try {
+        // Show chapter selection modal for re-downloading
+        showChapterSelectionModal(mangaId, true); // Pass true to indicate this is a re-download
+    } catch (error) {
+        console.error('Re-download setup failed:', error);
+        alert(`Re-download setup failed: ${error.message}`);
+    }
+};
+
+window.deleteMangaOffline = async function (mangaId) {
+    try {
+        await window.offlineManager.deleteManga(mangaId);
+
+        // Update button state
+        updateDownloadButtonState(false, false, 0);
+    } catch (error) {
+        console.error('Delete failed:', error);
+        alert(`Delete failed: ${error.message}`);
+    }
+};
+
+window.cancelDownload = function (mangaId) {
+    if (window.offlineManager && window.offlineManager.downloadQueue.has(mangaId)) {
+        const downloadInfo = window.offlineManager.downloadQueue.get(mangaId);
+        downloadInfo.status = 'cancelled';
+        window.offlineManager.downloadQueue.delete(mangaId);
+    }
+
+    hideDownloadProgress();
+
+    // Reset button state - check if already downloaded
+    setTimeout(async () => {
+        try {
+            const downloadedManga = await window.offlineManager.getDownloadedManga();
+            const isDownloaded = downloadedManga.some(manga => manga.id === mangaId);
+            updateDownloadButtonState(isDownloaded, false, 0);
+        } catch (error) {
+            updateDownloadButtonState(false, false, 0);
+        }
+    }, 100);
+};
+
+// Global functions for modal actions
+window.addToBookmarksFromModal = async function (mangaId, mangaUrl, mangaCover, mangaTitle) {
+    const modal = document.getElementById('add-to-library-modal');
+    if (modal) modal.remove();
+
+    try {
+        const mangaData = {
+            id: mangaId,
+            url: mangaUrl,
+            cover: mangaCover,
+            title: mangaTitle,
+            dateAdded: Date.now()
+        };
+
+        // Add to localStorage
+        let library = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        const existingIndex = library.findIndex(item => item.id === mangaData.id);
+        if (existingIndex > -1) {
+            library.splice(existingIndex, 1);
+        }
+        library.push(mangaData);
+        localStorage.setItem('mangaLibrary', JSON.stringify(library));
+
+        // Update button state
+        const addToLibraryBtn = document.querySelector('.add-to-library-btn');
+        const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>`;
+        const inLibraryIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 21V5C5 3.89543 5.89543 3 7 3H17C18.1046 3 19 3.89543 19 5V21L12 17L5 21Z" /></svg>`;
+
+        if (addToLibraryBtn) {
+            addToLibraryBtn.innerHTML = inLibraryIcon;
+            addToLibraryBtn.classList.remove('bg-neutral-800', 'hover:bg-neutral-700', 'text-neutral-200');
+            addToLibraryBtn.classList.add('bg-orange-500/10', 'hover:bg-orange-500/30');
+            addToLibraryBtn.setAttribute('aria-label', 'Remove from Library');
+        }
+
+        // Sync with server
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                await fetch('/auth/bookmarks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(mangaData)
+                });
+            } catch (error) {
+                console.error('Error syncing bookmark to server:', error);
+            }
+        }
+
+        showNotification('Added to bookmarks', 'success');
+    } catch (error) {
+        console.error('Error adding to bookmarks:', error);
+        showNotification('Failed to add to bookmarks', 'error');
+    }
+};
+
+window.addToListFromModal = async function (listId, mangaId, mangaTitle, listTitle) {
+    const modal = document.getElementById('add-to-library-modal');
+
+    try {
+        const data = await window.mangaTaroAPI.request('/auth/list-items', {
+            method: 'POST',
+            body: JSON.stringify({
+                list_id: listId,
+                manga_id: mangaId
+            })
+        });
+
+        if (data.success) {
+            if (modal) modal.remove();
+            showNotification(`Added "${mangaTitle}" to "${listTitle}"`, 'success');
+
+            // Invalidate lists cache to reflect updated item count
+            window.mangaTaroAPI.invalidateCache('/auth/lists');
+        } else {
+            // Handle specific error types with customized messages
+            const errorType = data.error_type;
+            let errorMessage;
+
+            switch (errorType) {
+                case 'already_exists':
+                    errorMessage = `"${mangaTitle}" is already in "${listTitle}"`;
+                    break;
+                case 'limit_reached':
+                    errorMessage = `List is full! "${listTitle}" has reached the maximum of 300 manga`;
+                    break;
+                case 'list_not_found':
+                    errorMessage = `Could not find list "${listTitle}"`;
+                    break;
+                default:
+                    errorMessage = data.message || 'Failed to add manga to list';
+            }
+
+            showNotification(errorMessage, 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to list:', error);
+
+        // Check if error has data attached (from API response)
+        if (error.data && error.data.error_type) {
+            const errorType = error.data.error_type;
+            let errorMessage;
+
+            switch (errorType) {
+                case 'already_exists':
+                    errorMessage = `"${mangaTitle}" is already in "${listTitle}"`;
+                    break;
+                case 'limit_reached':
+                    errorMessage = `List is full! "${listTitle}" has reached the maximum of 300 manga`;
+                    break;
+                case 'list_not_found':
+                    errorMessage = `Could not find list "${listTitle}"`;
+                    break;
+                default:
+                    errorMessage = error.data.message || error.message || 'Failed to add manga to list';
+            }
+
+            showNotification(errorMessage, 'error');
+        } else {
+            // Fallback for other errors
+            showNotification(error.message || 'Failed to add to list', 'error');
+        }
+    }
+};
+
+window.showCreateListFromModal = function (mangaId) {
+    const modal = document.getElementById('add-to-library-modal');
+    if (modal) modal.remove();
+
+    const createModal = document.createElement('div');
+    createModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/95 backdrop-blur-md';
+    createModal.innerHTML = `
+        <div class="bg-neutral-800/90 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-neutral-700/50">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-neutral-100 mb-2 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create New List
+                </h3>
+                <p class="text-neutral-300 text-sm mb-4">Create a new list and add this manga to it</p>
+
+                <form id="create-list-form" class="space-y-4">
+                    <div>
+                        <label for="list-title" class="block text-sm font-medium text-neutral-300 mb-2">List Title</label>
+                        <input type="text" id="list-title" name="title" required
+                               class="w-full px-3 py-2 bg-neutral-700/50 border border-neutral-600/50 rounded-lg text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                               placeholder="Enter list title">
+                    </div>
+
+                    <div>
+                        <label for="list-description" class="block text-sm font-medium text-neutral-300 mb-2">Description (optional)</label>
+                        <textarea id="list-description" name="description" rows="3"
+                                  class="w-full px-3 py-2 bg-neutral-700/50 border border-neutral-600/50 rounded-lg text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                                  placeholder="Enter list description"></textarea>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="list-public" name="public"
+                               class="rounded bg-neutral-700 border-neutral-600 text-neutral-500 focus:ring-blue-500/50">
+                        <label for="list-public" class="text-sm text-neutral-300">Make this list private</label>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="this.closest('.fixed').remove();"
+                                class="flex-1 px-4 py-2 bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-400 rounded-lg font-medium transition-all duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="flex-1 px-4 py-2 bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-400 rounded-lg font-medium transition-all duration-200">
+                            Create List
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(createModal);
+
+    // Handle form submission
+    const form = createModal.querySelector('#create-list-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const isPublic = !formData.get('public'); // Inverted because checkbox is "make private"
+
+        try {
+            // Create the list
+            const listData = await window.mangaTaroAPI.request('/auth/lists', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    public: isPublic
+                })
+            });
+
+            if (!listData.success) {
+                throw new Error(listData.message || 'Failed to create list');
+            }
+
+            // Add manga to the new list
+            const addData = await window.mangaTaroAPI.request('/auth/list-items', {
+                method: 'POST',
+                body: JSON.stringify({
+                    list_id: listData.list.id,
+                    manga_id: mangaId
+                })
+            });
+
+            if (addData.success) {
+                createModal.remove();
+                showNotification(`Created "${title}" and added manga to it`, 'success');
+
+                // Invalidate lists cache to reflect new list
+                window.mangaTaroAPI.invalidateCache('/auth/lists');
+            } else {
+                throw new Error(addData.message || 'Failed to add manga to new list');
+            }
+
+        } catch (error) {
+            console.error('Error creating list:', error);
+            showNotification(error.message || 'Failed to create list', 'error');
+        }
+    });
+
+    // Close on click outside
+    createModal.addEventListener('click', (e) => {
+        if (e.target === createModal) {
+            createModal.remove();
+        }
+    });
+
+    // Focus the title input
+    setTimeout(() => {
+        createModal.querySelector('#list-title').focus();
+    }, 100);
+};
+
+window.removeFromBookmarks = async function (mangaId) {
+    try {
+        // Remove from localStorage
+        let library = JSON.parse(localStorage.getItem('mangaLibrary')) || [];
+        const index = library.findIndex(item => item.id === mangaId);
+        if (index > -1) {
+            library.splice(index, 1);
+            localStorage.setItem('mangaLibrary', JSON.stringify(library));
+        }
+
+        // Update button state
+        const addToLibraryBtn = document.querySelector('.add-to-library-btn');
+        const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>`;
+
+        if (addToLibraryBtn) {
+            addToLibraryBtn.innerHTML = plusIcon;
+            addToLibraryBtn.classList.remove('bg-orange-500/10', 'hover:bg-orange-500/30');
+            addToLibraryBtn.classList.add('bg-neutral-800', 'hover:bg-neutral-700', 'text-neutral-200');
+            addToLibraryBtn.setAttribute('aria-label', 'Add to Library');
+        }
+
+        // Sync with server using centralized API
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                await window.mangaTaroAPI.removeBookmark(mangaId);
+            } catch (error) {
+                console.error('Error removing bookmark from server:', error);
+            }
+        }
+
+        showNotification('Removed from bookmarks', 'success');
+    } catch (error) {
+        console.error('Error removing from bookmarks:', error);
+        showNotification('Failed to remove from bookmarks', 'error');
+    }
+};
+
+function showNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-lg backdrop-blur-sm border max-w-sm ${type === 'success' ? 'bg-neutral-800/90 text-neutral-200 border-neutral-700/50' :
+        type === 'error' ? 'bg-red-500/90 text-neutral-100 border-red-600/50' :
+            'bg-neutral-500/90 text-neutral-100 border-blue-600/50'
+        }`;
+
+    toast.innerHTML = `
+        <div class="flex items-start gap-2">
+            <div class="flex-1 text-sm">${message}</div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-neutral-100/80 hover:text-neutral-100 text-lg leading-none">×</button>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Gallery functionality
+document.addEventListener('DOMContentLoaded', function () {
+    const galleryTab = document.querySelector('[data-tab-target="#tab-gallery"]');
+
+    if (galleryTab) {
+        galleryTab.addEventListener('click', function () {
+            setTimeout(() => {
+                initializeGallery();
+            }, 100);
+        });
+    }
+});
+
+function initializeGallery() {
+    const galleryGrid = document.querySelector('.gallery-grid');
+    const galleryLoading = document.querySelector('.gallery-loading');
+
+    if (!galleryGrid || !galleryLoading) return;
+
+    // Show loading
+    galleryLoading.classList.remove('hidden');
+    galleryGrid.style.display = 'none';
+
+    // Initialize lazy loading for gallery images
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    let loadedImages = 0;
+    const totalImages = galleryItems.length;
+
+    if (totalImages === 0) {
+        galleryLoading.classList.add('hidden');
+        galleryGrid.style.display = 'block';
+        return;
+    }
+
+    galleryItems.forEach((item, index) => {
+        const img = item.querySelector('.lazy-load');
+        const largeUrl = img.dataset.src;
+
+        if (largeUrl) {
+            // Create a new image to preload
+            const preloadImg = new Image();
+            preloadImg.onload = function () {
+                img.src = largeUrl;
+                img.classList.add('loaded');
+                loadedImages++;
+
+                // When all images are loaded, hide loading and show gallery
+                if (loadedImages >= totalImages) {
+                    galleryLoading.classList.add('hidden');
+                    galleryGrid.style.display = 'block';
+                }
+            };
+            preloadImg.onerror = function () {
+                // If image fails to load, still count it as processed
+                loadedImages++;
+                img.style.background = '#374151';
+
+                if (loadedImages >= totalImages) {
+                    galleryLoading.classList.add('hidden');
+                    galleryGrid.style.display = 'block';
+                }
+            };
+            preloadImg.src = largeUrl;
+
+            // Add click event for modal
+            item.addEventListener('click', function () {
+                openGalleryModal(index);
+            });
+        }
+    });
+}
+
+let currentGalleryIndex = 0;
+let galleryImages = [];
+
+function openGalleryModal(index) {
+    const modal = document.getElementById('gallery-modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalCounter = document.getElementById('modal-counter');
+
+    if (!modal || !modalImage) return;
+
+    // Populate gallery images array
+    galleryImages = Array.from(document.querySelectorAll('.gallery-item')).map(item => {
+        const img = item.querySelector('.lazy-load');
+        return {
+            src: img.dataset.src,
+            alt: img.alt
+        };
+    });
+
+    currentGalleryIndex = index;
+    updateModalImage();
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Update counter
+    if (modalCounter) {
+        modalCounter.textContent = `${currentGalleryIndex + 1} / ${galleryImages.length}`;
+    }
+}
+
+function closeGalleryModal() {
+    const modal = document.getElementById('gallery-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function nextImage() {
+    if (currentGalleryIndex < galleryImages.length - 1) {
+        currentGalleryIndex++;
+        updateModalImage();
+    }
+}
+
+function previousImage() {
+    if (currentGalleryIndex > 0) {
+        currentGalleryIndex--;
+        updateModalImage();
+    }
+}
+
+function updateModalImage() {
+    const modalImage = document.getElementById('modal-image');
+    const modalCounter = document.getElementById('modal-counter');
+
+    if (modalImage && galleryImages[currentGalleryIndex]) {
+        modalImage.src = galleryImages[currentGalleryIndex].src;
+        modalImage.alt = galleryImages[currentGalleryIndex].alt;
+    }
+
+    if (modalCounter) {
+        modalCounter.textContent = `${currentGalleryIndex + 1} / ${galleryImages.length}`;
+    }
+}
+
+// Keyboard navigation for gallery modal
+document.addEventListener('keydown', function (e) {
+    const modal = document.getElementById('gallery-modal');
+    if (!modal || modal.classList.contains('hidden')) return;
+
+    switch (e.key) {
+        case 'Escape':
+            closeGalleryModal();
+            break;
+        case 'ArrowLeft':
+            previousImage();
+            break;
+        case 'ArrowRight':
+            nextImage();
+            break;
+    }
+});
+
+// Click outside to close modal
+document.addEventListener('click', function (e) {
+    const modal = document.getElementById('gallery-modal');
+    if (e.target === modal) {
+        closeGalleryModal();
+    }
+});
+
+// Make functions global so they can be called from HTML
+window.closeGalleryModal = closeGalleryModal;
+window.nextImage = nextImage;
+window.previousImage = previousImage;
+// ==================== MANGA STATUS FUNCTIONALITY ====================
+function initializeMangaStatus() {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return;
+
+    const body = document.querySelector('body');
+    const mangaId = body?.dataset.mangaId;
+    if (!mangaId) return;
+
+    let currentStatus = null;
+
+    const statusConfig = {
+        'reading': { label: 'Reading', bg: 'bg-blue-500/10', hover: 'hover:bg-blue-500/30', text: 'text-blue-400', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />' },
+        'completed': { label: 'Completed', bg: 'bg-green-500/10', hover: 'hover:bg-green-500/30', text: 'text-green-400', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />' },
+        'on_hold': { label: 'On Hold', bg: 'bg-yellow-500/10', hover: 'hover:bg-yellow-500/30', text: 'text-yellow-400', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />' },
+        'dropped': { label: 'Dropped', bg: 'bg-red-500/10', hover: 'hover:bg-red-500/30', text: 'text-red-400', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />' },
+        'plan_to_read': { label: 'Plan to Read', bg: 'bg-purple-500/10', hover: 'hover:bg-purple-500/30', text: 'text-purple-400', svg: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />' }
+    };
+
+    function createStatusButton(variant = '') {
+        const container = document.createElement('div');
+        const suffix = variant ? `-${variant}` : '';
+        const isMobile = variant === 'mobile';
+
+        container.className = `relative manga-status-container${suffix}`;
+
+        let dropdownHTML = '';
+        for (const [key, config] of Object.entries(statusConfig)) {
+            dropdownHTML += `<button class="manga-status-option w-full text-left px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700 hover:${config.text} transition-colors" data-status="${key}"><span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">${config.svg}</svg>${config.label}</span></button>`;
+        }
+
+        const iconSize = isMobile ? 'w-4 h-4' : 'w-5 h-5';
+        const pyClass = isMobile ? 'py-2' : 'py-2.5';
+        const textSize = isMobile ? 'text-xs sm:text-sm' : 'text-sm';
+
+        container.innerHTML = `
+            <button id="manga-status-btn${suffix}" class="manga-status-btn w-full flex items-center justify-center gap-2 bg-neutral-500/10 hover:bg-neutral-500/30 text-neutral-400 px-4 ${pyClass} rounded-lg font-medium transition-all duration-300 ${textSize}" data-manga-id="${mangaId}">
+                <span class="flex items-center gap-2">
+                    <svg class="${iconSize}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <span class="status-label">Set Status</span>
+                </span>
+                <svg class="w-4 h-4 transition-transform duration-200 dropdown-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div class="manga-status-dropdown hidden absolute left-0 bottom-full mb-2 w-full bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50">
+                <div class="py-1">
+                    ${dropdownHTML}
+                    <div class="border-t border-neutral-700 mt-1 pt-1">
+                        <button class="manga-status-clear w-full text-left px-4 py-2 text-sm text-neutral-500 hover:bg-neutral-700 hover:text-neutral-300 transition-colors">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                Clear Status
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        return container;
+    }
+
+    function updateAllButtonStates(status) {
+        document.querySelectorAll('.manga-status-btn').forEach(btn => {
+            const contentSpan = btn.querySelector('span.flex.items-center.gap-2');
+            const svg = contentSpan?.querySelector('svg');
+            const text = contentSpan?.querySelector('.status-label');
+
+            if (status && statusConfig[status]) {
+                const cfg = statusConfig[status];
+                Object.values(statusConfig).forEach(c => btn.classList.remove(c.bg, c.hover, c.text));
+                btn.classList.remove('bg-neutral-500/10', 'hover:bg-neutral-500/30', 'text-neutral-400');
+                btn.classList.add(cfg.bg, cfg.hover, cfg.text);
+                if (text) text.textContent = cfg.label;
+                if (svg) svg.innerHTML = cfg.svg;
+            } else {
+                Object.values(statusConfig).forEach(c => btn.classList.remove(c.bg, c.hover, c.text));
+                btn.classList.add('bg-neutral-500/10', 'hover:bg-neutral-500/30', 'text-neutral-400');
+                if (text) text.textContent = 'Set Status';
+                if (svg) svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />';
+            }
+        });
+
+        // Update option highlighting
+        document.querySelectorAll('.manga-status-option').forEach(opt => {
+            const optCfg = statusConfig[opt.dataset.status];
+            if (status && opt.dataset.status === status) {
+                opt.classList.add(optCfg.bg.replace('/10', '/20'), optCfg.text);
+            } else {
+                Object.values(statusConfig).forEach(c => opt.classList.remove(c.bg.replace('/10', '/20'), c.text));
+            }
+        });
+    }
+
+    async function fetchStatus() {
+        try {
+            const res = await fetch(`/auth/manga-status?manga_id=${mangaId}`, { method: 'GET', credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.status) {
+                    currentStatus = data.status;
+                    updateAllButtonStates(data.status);
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching status:', e);
+        }
+    }
+
+    function setupEvents(container) {
+        const btn = container.querySelector('.manga-status-btn');
+        const dropdown = container.querySelector('.manga-status-dropdown');
+        if (!btn || !dropdown) return;
+
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            // Close all other dropdowns first
+            document.querySelectorAll('.manga-status-dropdown').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            const isHidden = dropdown.classList.toggle('hidden');
+            const arrow = btn.querySelector('.dropdown-arrow');
+            if (arrow) {
+                arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        });
+
+        container.querySelectorAll('.manga-status-option').forEach(opt => {
+            opt.addEventListener('click', async function () {
+                const status = this.dataset.status;
+                try {
+                    const res = await fetch('/auth/manga-status', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ manga_id: parseInt(mangaId), status })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            currentStatus = status;
+                            updateAllButtonStates(status);
+                            // Close all dropdowns
+                            document.querySelectorAll('.manga-status-dropdown').forEach(d => d.classList.add('hidden'));
+                            document.querySelectorAll('.dropdown-arrow').forEach(a => a.style.transform = 'rotate(0deg)');
+                            showNotification(`Status set to ${statusConfig[status].label}`, 'success');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error:', e);
+                    showNotification('Failed to update status', 'error');
+                }
+            });
+        });
+
+        const clearBtn = container.querySelector('.manga-status-clear');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch(`/auth/manga-status?manga_id=${mangaId}`, { method: 'DELETE', credentials: 'include' });
+                    if (res.ok) {
+                        currentStatus = null;
+                        updateAllButtonStates(null);
+                        document.querySelectorAll('.manga-status-dropdown').forEach(d => d.classList.add('hidden'));
+                        document.querySelectorAll('.dropdown-arrow').forEach(a => a.style.transform = 'rotate(0deg)');
+                        showNotification('Status cleared', 'success');
+                    }
+                } catch (e) {
+                    console.error('Error:', e);
+                    showNotification('Failed to clear status', 'error');
+                }
+            });
+        }
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.manga-status-container, .manga-status-container-desktop, .manga-status-container-mobile')) {
+            document.querySelectorAll('.manga-status-dropdown').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.dropdown-arrow').forEach(a => a.style.transform = 'rotate(0deg)');
+        }
+    });
+
+    // Create status buttons for both containers
+    const desktopContainer = document.getElementById('desktop-action-buttons');
+    const mobileContainer = document.getElementById('mobile-action-buttons');
+
+    if (desktopContainer) {
+        const desktopStatusContainer = createStatusButton('desktop');
+        // Insert before the claim button
+        const claimBtn = desktopContainer.querySelector('#claim-manga-btn');
+        if (claimBtn) {
+            claimBtn.before(desktopStatusContainer);
+        } else {
+            desktopContainer.appendChild(desktopStatusContainer);
+        }
+        setupEvents(desktopStatusContainer);
+    }
+
+    if (mobileContainer) {
+        const mobileStatusContainer = createStatusButton('mobile');
+        // Insert before the claim button
+        const claimBtnMobile = mobileContainer.querySelector('#claim-manga-btn-mobile');
+        if (claimBtnMobile) {
+            claimBtnMobile.before(mobileStatusContainer);
+        } else {
+            mobileContainer.appendChild(mobileStatusContainer);
+        }
+        setupEvents(mobileStatusContainer);
+    }
+
+    // Fallback for old layout
+    if (!desktopContainer && !mobileContainer) {
+        const offlineBtn = document.querySelector('.offline-download-btn');
+        if (offlineBtn) {
+            const statusContainer = createStatusButton('');
+            offlineBtn.after(statusContainer);
+            setupEvents(statusContainer);
+        }
+    }
+
+    fetchStatus();
+}
+
+// ==================== CHAPTER THREE-DOT MENU FUNCTIONALITY ====================
+// Toggle chapter menu dropdown
+window.toggleChapterMenu = function (button) {
+    const container = button.closest('.chapter-menu-container');
+    if (!container) return;
+
+    const dropdown = container.querySelector('.chapter-menu-dropdown');
+    if (!dropdown) return;
+
+    // Close all other open dropdowns first
+    document.querySelectorAll('.chapter-menu-dropdown').forEach(d => {
+        if (d !== dropdown) {
+            d.classList.add('hidden');
+        }
+    });
+
+    // Toggle this dropdown
+    dropdown.classList.toggle('hidden');
+};
+
+// Mark chapter as read from menu
+window.markChapterAsReadFromMenu = async function (chapterId, button) {
+    const body = document.querySelector('body');
+    const mangaId = body ? body.dataset.mangaId : null;
+
+    if (!mangaId || !chapterId) {
+        console.error('Missing manga ID or chapter ID');
+        return;
+    }
+
+    // Check if user is authenticated
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+        showNotification('Please sign in to mark chapters as read', 'error');
+        // Close the dropdown
+        const dropdown = button.closest('.chapter-menu-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+        return;
+    }
+
+    // Check localStorage cache first
+    const cacheKey = `chapter_read_${chapterId}`;
+    const cachedRead = localStorage.getItem(cacheKey);
+    if (cachedRead && (Date.now() - parseInt(cachedRead)) < 86400000) {
+        showNotification('Chapter already marked as read', 'success');
+        // Close the dropdown
+        const dropdown = button.closest('.chapter-menu-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+        return;
+    }
+
+    try {
+        const response = await fetch('/auth/chapters-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                manga_id: parseInt(mangaId),
+                chapter_id: parseInt(chapterId)
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Cache the result
+                localStorage.setItem(cacheKey, Date.now().toString());
+
+                // Also save to mangahistory localStorage for history page display
+                const bookmarkBtn = document.querySelector('[data-manga-cover]');
+                const chapterLink = document.querySelector(`a[data-chapter-id="${chapterId}"]`);
+
+                if (bookmarkBtn && chapterLink && window.addToHistory) {
+                    const mangaName = document.querySelector('h1')?.textContent?.trim() || 'Unknown';
+                    const coverUrl = bookmarkBtn.dataset.mangaCover;
+                    const mangaUrl = bookmarkBtn.dataset.mangaUrl || window.location.href;
+                    const chapterUrl = chapterLink.href;
+                    const chapterText = chapterLink.textContent.trim();
+                    const chapterMatch = chapterText.match(/Chapter\s+([\d.]+)/i);
+                    const chapterNumber = chapterMatch ? chapterMatch[1] : '0';
+
+                    window.addToHistory({
+                        mangaId: mangaId,
+                        mangaName: mangaName,
+                        coverUrl: coverUrl,
+                        mangaUrl: mangaUrl,
+                        chapterId: chapterId,
+                        chapterUrl: chapterUrl,
+                        chapterNumber: chapterNumber,
+                        timestamp: Date.now()
+                    });
+                }
+
+                // Show success message
+                const message = data.cached ? 'Chapter already marked as read' : 'Chapter marked as read';
+                showNotification(message, 'success');
+
+                // Update UI to show read indicator
+                updateChapterReadIndicator(chapterId);
+
+                // Close the dropdown
+                const dropdown = button.closest('.chapter-menu-dropdown');
+                if (dropdown) dropdown.classList.add('hidden');
+            } else {
+                showNotification('Failed to mark chapter as read', 'error');
+            }
+        } else {
+            showNotification('Failed to mark chapter as read', 'error');
+        }
+    } catch (error) {
+        console.error('Error marking chapter as read:', error);
+        showNotification('Failed to mark chapter as read', 'error');
+    }
+};
+
+// Update chapter to show read indicator
+function updateChapterReadIndicator(chapterId) {
+    const chapterLink = document.querySelector(`a[data-chapter-id="${chapterId}"]`);
+    if (!chapterLink) return;
+
+    // Check if indicator already exists
+    if (chapterLink.querySelector('.read-indicator')) return;
+
+    addReadIndicatorToChapter(chapterLink);
+
+    // Add opacity to show it's read
+    chapterLink.style.opacity = '0.65';
+}
+
+// Helper function to add read indicator to a chapter link
+function addReadIndicatorToChapter(link) {
+    const indicator = document.createElement('span');
+    indicator.className = 'read-indicator inline-flex items-center';
+    indicator.innerHTML = `
+        <svg class="w-4 h-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+    `;
+    indicator.title = 'Chapter read';
+
+    // Mobile layout - find the chapter number container
+    const mobileChapterContainer = link.querySelector('.sm\\:hidden .flex.items-center.gap-1\\.5');
+    if (mobileChapterContainer) {
+        const chapterSpan = mobileChapterContainer.querySelector('.font-medium');
+        if (chapterSpan && !mobileChapterContainer.querySelector('.read-indicator')) {
+            mobileChapterContainer.insertBefore(indicator.cloneNode(true), chapterSpan);
+        }
+    }
+
+    // Desktop layout - find the main flex container with chapter info
+    const desktopContainer = link.querySelector('.hidden.sm\\:flex > .flex.items-center.gap-2');
+    if (desktopContainer) {
+        const chapterSpan = desktopContainer.querySelector('.font-medium');
+        if (chapterSpan && !desktopContainer.querySelector('.read-indicator')) {
+            // Insert after the menu container, before the chapter span
+            const menuContainer = desktopContainer.querySelector('.chapter-menu-container');
+            if (menuContainer && menuContainer.nextSibling) {
+                desktopContainer.insertBefore(indicator.cloneNode(true), menuContainer.nextSibling);
+            }
+        }
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function (e) {
+    // Don't close if clicking on a menu button or inside a dropdown
+    if (e.target.closest('.chapter-menu-btn') || e.target.closest('.chapter-menu-dropdown')) {
+        return;
+    }
+
+    // Close all dropdowns
+    document.querySelectorAll('.chapter-menu-dropdown').forEach(dropdown => {
+        dropdown.classList.add('hidden');
+    });
+});
+
+// ===== CLAIM MANGA FUNCTIONALITY =====
+// Only for users with role >= 4
+document.addEventListener('DOMContentLoaded', function () {
+    // Parse user data directly from localStorage
+    let userData = null;
+    try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            userData = JSON.parse(userStr);
+        }
+    } catch (e) {
+        console.error('Error parsing user data:', e);
+    }
+
+    // Check if user has role >= 4
+    if (!userData || !userData.role || userData.role < 4) {
+        return; // Don't show claim button or make any API calls
+    }
+
+    const claimBtn = document.getElementById('claim-manga-btn');
+    const claimBtnMobile = document.getElementById('claim-manga-btn-mobile');
+    const claimModal = document.getElementById('claim-manga-modal');
+    const closeModalBtn = document.getElementById('close-claim-manga-modal');
+    const cancelBtn = document.getElementById('cancel-claim-manga');
+    const submitBtn = document.getElementById('submit-claim-manga');
+    const groupSelect = document.getElementById('claim-group-select');
+    const messageDiv = document.getElementById('claim-manga-message');
+
+    if ((!claimBtn && !claimBtnMobile) || !claimModal) return;
+
+    // Show the claim button (user has role >= 4)
+    if (claimBtn) claimBtn.style.display = 'flex';
+    if (claimBtnMobile) claimBtnMobile.style.display = 'flex';
+
+    // Open modal and load groups
+    const handleClaimClick = async function () {
+        openModal();
+        await loadGroups();
+    };
+
+    if (claimBtn) claimBtn.addEventListener('click', handleClaimClick);
+    if (claimBtnMobile) claimBtnMobile.addEventListener('click', handleClaimClick);
+
+    // Close modal handlers
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    claimModal.addEventListener('click', function (e) {
+        if (e.target === claimModal) {
+            closeModal();
+        }
+    });
+
+    // Submit claim
+    submitBtn.addEventListener('click', async function () {
+        await submitClaim();
+    });
+
+    function openModal() {
+        claimModal.style.display = 'block';
+        document.body.classList.add('overflow-hidden');
+
+        setTimeout(() => {
+            const modalContent = claimModal.querySelector('.bg-neutral-800');
+            if (modalContent) {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }
+        }, 10);
+
+        // Clear previous message
+        messageDiv.classList.add('hidden');
+        messageDiv.textContent = '';
+    }
+
+    function closeModal() {
+        const modalContent = claimModal.querySelector('.bg-neutral-800');
+        if (modalContent) {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+        }
+
+        setTimeout(() => {
+            claimModal.style.display = 'none';
+            document.body.classList.remove('overflow-hidden');
+        }, 300);
+    }
+
+    async function loadGroups() {
+        groupSelect.innerHTML = '<option value="">Loading groups...</option>';
+        groupSelect.disabled = true;
+        submitBtn.disabled = true;
+
+        try {
+            const data = await window.mangaTaroAPI.request('/auth/claim-manga', {
+                method: 'GET'
+            });
+
+            if (data.success && data.groups && data.groups.length > 0) {
+                groupSelect.innerHTML = '<option value="">Select a group...</option>';
+                data.groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.id;
+                    option.textContent = group.name;
+                    groupSelect.appendChild(option);
+                });
+                groupSelect.disabled = false;
+                submitBtn.disabled = false;
+            } else {
+                groupSelect.innerHTML = '<option value="">No groups available</option>';
+                showMessage('You are not a member of any group. Please join a group first.', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading groups:', error);
+            groupSelect.innerHTML = '<option value="">Error loading groups</option>';
+            showMessage('Failed to load groups. Please try again.', 'error');
+        }
+    }
+
+    async function submitClaim() {
+        const selectedGroupId = groupSelect.value;
+
+        if (!selectedGroupId) {
+            showMessage('Please select a group', 'error');
+            return;
+        }
+
+        const mangaId = document.body.dataset.mangaId;
+        if (!mangaId) {
+            showMessage('Manga ID not found', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Claiming...';
+
+        try {
+            const data = await window.mangaTaroAPI.request('/auth/claim-manga', {
+                method: 'POST',
+                body: JSON.stringify({
+                    manga_id: parseInt(mangaId),
+                    group_id: parseInt(selectedGroupId)
+                })
+            });
+
+            if (data.success) {
+                showMessage(data.message || 'Manga claimed successfully!', 'success');
+
+                // Hide claim button
+                if (claimBtn) claimBtn.style.display = 'none';
+                if (claimBtnMobile) claimBtnMobile.style.display = 'none';
+
+                // Show toast notification
+                if (window.showToast) {
+                    window.showToast(data.message || 'Manga claimed successfully!', 'success');
+                }
+
+                // Close modal after 1.5 seconds
+                setTimeout(() => {
+                    closeModal();
+                }, 1500);
+            } else {
+                showMessage(data.message || 'Failed to claim manga', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Claim Manga';
+            }
+        } catch (error) {
+            console.error('Error claiming manga:', error);
+            showMessage(error.message || 'An error occurred. Please try again.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Claim Manga';
+        }
+    }
+
+    function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-green-500/20', 'text-green-400');
+
+        if (type === 'error') {
+            messageDiv.classList.add('bg-red-500/20', 'text-red-400');
+        } else {
+            messageDiv.classList.add('bg-green-500/20', 'text-green-400');
+        }
+    }
+
+    // Share functionality
+    const shareBtn = document.getElementById('share-manga-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async function () {
+            const title = this.dataset.mangaTitle;
+            const url = this.dataset.mangaUrl;
+
+            // Check if Web Share API is supported (works on mobile and PWA)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: title,
+                        text: `Check out ${title} on MangaTaro`,
+                        url: url
+                    });
+                    ///console.log('Shared successfully');
+                } catch (error) {
+                    // User cancelled or error occurred
+                    if (error.name !== 'AbortError') {
+                        console.error('Error sharing:', error);
+                        fallbackCopyToClipboard(url, shareBtn);
+                    }
+                }
+            } else {
+                // Fallback for desktop/browsers without Web Share API
+                fallbackCopyToClipboard(url, shareBtn);
+            }
+        });
+    }
+
+    function fallbackCopyToClipboard(url, button) {
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                showShareFeedback(button);
+            }).catch(() => {
+                // Fallback to old method
+                legacyCopyToClipboard(url, button);
+            });
+        } else {
+            legacyCopyToClipboard(url, button);
+        }
+    }
+
+    function legacyCopyToClipboard(url, button) {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            showShareFeedback(button);
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            if (window.showToast) {
+                window.showToast('Failed to copy link', 'error');
+            }
+        }
+
+        document.body.removeChild(textArea);
+    }
+
+    function showShareFeedback(button) {
+        const originalHTML = button.innerHTML;
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+        `;
+        button.classList.add('bg-orange-500/80');
+
+        if (window.showToast) {
+            window.showToast('Link copied to clipboard!', 'success');
+        }
+
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('bg-orange-500/80');
+        }, 2000);
+    }
+});
+
+// ===== RATING BADGE & WRITE REVIEW BUTTONS =====
+// Handle clicks from the manga header rating/review buttons
+(function() {
+    document.addEventListener('click', function(e) {
+        // Find the reviews tab button - uses data-tab-target attribute
+        const reviewsTabBtn = document.querySelector('[data-tab-target="#tab-reviews"]');
+        if (!reviewsTabBtn) return;
+
+        // Handle rating badge click - go to reviews tab
+        const ratingBadge = e.target.closest('.rating-badge');
+        if (ratingBadge && !ratingBadge.classList.contains('write-review-trigger')) {
+            e.preventDefault();
+            e.stopPropagation();
+            reviewsTabBtn.click();
+            // Scroll to tab content
+            setTimeout(() => {
+                const tabContent = document.querySelector('#tab-reviews');
+                if (tabContent) {
+                    tabContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 150);
+            return;
+        }
+
+        // Handle write review button click - go to reviews tab and open modal
+        const writeReviewBtn = e.target.closest('.write-review-trigger');
+        if (writeReviewBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Check if logged in first
+            const isLoggedIn = typeof window.isAuthenticated === 'function'
+                ? window.isAuthenticated()
+                : !!localStorage.getItem('user');
+
+            if (!isLoggedIn) {
+                if (typeof window.openModal === 'function') {
+                    window.openModal('loginModal');
+                } else {
+                    alert('Please log in to write a review');
+                }
+                return;
+            }
+
+            // Click the reviews tab
+            reviewsTabBtn.click();
+
+            // Wait for tab to switch and reviews to initialize, then open modal
+            const tryOpenModal = (attempts = 0) => {
+                if (attempts > 20) return; // Give up after 2 seconds
+
+                // Check if reviewsSystem exists and has showReviewModal
+                if (window.reviewsSystem && typeof window.reviewsSystem.showReviewModal === 'function') {
+                    window.reviewsSystem.showReviewModal(!!window.reviewsSystem.userReview);
+                    return;
+                }
+
+                // Also check for the write-review-btn inside the reviews tab
+                const innerWriteBtn = document.querySelector('#tab-reviews .write-review-btn');
+                if (innerWriteBtn) {
+                    innerWriteBtn.click();
+                    return;
+                }
+
+                // Try again
+                setTimeout(() => tryOpenModal(attempts + 1), 100);
+            };
+
+            setTimeout(tryOpenModal, 200);
+        }
+    });
+})();
+
